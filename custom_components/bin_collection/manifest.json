@@ -3,14 +3,12 @@
     "name": "Bin Collection",
     "codeowners": ["@jordanhinks"],
     "config_flow": true,
+    "dependencies": [],
     "documentation": "https://github.com/jordanhinks/bin_collection",
     "integration_type": "service",
     "iot_class": "cloud_polling",
-    "quality_scale": "bronze",
     "issue_tracker": "https://github.com/jordanhinks/bin_collection/issues",
-    "requirements": [
-      "beautifulsoup4>=4.9.0",
-      "async-timeout>=3.0.0"
-    ],
+    "quality_scale": "bronze",
+    "requirements": ["beautifulsoup4>=4.9.0","async-timeout>=3.0.0"],
     "version": "0.2.0"
   }
