@@ -60,8 +60,7 @@ class BinCollectionOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         """Manage the options flow."""
         if user_input is not None:
-            # Normalize the calendar entity so that both "my_calendar" and
-            # "calendar.my_calendar" are stored as "calendar.my_calendar"
+            # Normalize the calendar entity, can accept calendar.my_calendar or my_calendar
             if "calendar_entity" in user_input:
                 value = user_input["calendar_entity"].strip()
                 if value and not value.startswith("calendar."):

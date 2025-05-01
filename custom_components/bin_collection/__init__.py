@@ -18,8 +18,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False  # Prevent setup if no valid address is found
 
     address = entry.data["address"]
-
-    # Ensure options merge correctly
+    
     options = {**entry.options} if entry.options else {}
 
     update_interval_hours = options.get("update_interval", DEFAULT_UPDATE_INTERVAL)
@@ -27,7 +26,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     create_calendar_events = options.get("create_calendar_events", False)
     calendar_entity = options.get("calendar_entity", "").strip()
-    # Note: We no longer normalize calendar_entity here. This is now handled in config_flow.py.
 
     # This dictionary is used ONLY for calendar event creation.
     event_summaries = {

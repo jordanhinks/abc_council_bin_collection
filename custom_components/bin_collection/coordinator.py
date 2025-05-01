@@ -26,26 +26,26 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         self.address = address
         self.url = f"https://www.armaghbanbridgecraigavon.gov.uk/resident/binday-result/?address={self.address}"
         self.create_calendar_events = create_calendar_events
-        self.calendar_entity = calendar_entity  # already normalized in __init__.py
-        # event_summaries is used ONLY for calendar event creation.
+        self.calendar_entity = calendar_entity
+        
         self.event_summaries = event_summaries  
         self._created_events = set()
         super().__init__(hass, _LOGGER, name="Bin Collection Data", update_interval=update_interval)
 
     async def _async_update_data(self):
         """Fetch HTML data, parse it, and, if configured, create calendar events."""
-        for attempt in range(3):  # Retry mechanism
+        for attempt in range(3):
             try:
                 async with async_timeout.timeout(30):
                     session = async_get_clientsession(self.hass)
                     response = await session.get(self.url)
                     response.raise_for_status()
                     html = await response.text()
-                break  # Exit loop on success
+                break
             except Exception as err:
                 _LOGGER.error("Error fetching data (attempt %d): %s", attempt + 1, err)
                 if attempt == 2:
-                    return {}  # Return empty data on failure
+                    return {}
         
         data = await self.hass.async_add_executor_job(self._parse_html, html)
 
@@ -75,14 +75,14 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
                         date_text = h4.text.strip()
                         try:
                             date_obj = datetime.strptime(date_text, "%d/%m/%Y")
-                            day_week = date_obj.strftime("%A")
-                            dates_list.append(f"{date_text} ({day_week})")
+                            formatted_date = date_obj.strftime("%Y-%m-%d")  # ISO 8601 format
+                            dates_list.append(formatted_date)
                         except ValueError:
                             _LOGGER.warning("Error parsing date: %s", date_text)
                             dates_list.append(f"Error parsing date: {date_text}")
                 else:
                     dates_list.append(f"No sibling div found for class '{class_name}'.")
-            # Use the default title from BIN_TYPES as the key.
+            
             result[default_title] = dates_list
 
         _LOGGER.debug("Parsed bin collection data: %s", result)
@@ -91,17 +91,9 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
     async def _create_calendar_events(self, data: dict):
         """Create an all-day calendar event for each bin type and date."""
         for bin_type, date_list in data.items():
-            for item in date_list:
-                match = re.search(r"(\d{2}/\d{2}/\d{4})", item)
-                if match:
-                    date_str = match.group(1)
-                    try:
-                        dt = datetime.strptime(date_str, "%d/%m/%Y").date()
-                    except Exception as ex:
-                        _LOGGER.error("Error parsing date %s: %s", date_str, ex)
-                        continue
-                    
-                    iso_start_date = dt.strftime("%Y-%m-%d")
+            for iso_start_date in date_list:
+                try:
+                    dt = datetime.strptime(iso_start_date, "%Y-%m-%d").date()
                     iso_end_date = (dt + timedelta(days=1)).strftime("%Y-%m-%d")
                     event_key = f"{bin_type}-{iso_start_date}"
                     
@@ -128,3 +120,6 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
                         _LOGGER.info("Created calendar event for: %s", event_key)
                     except Exception as ex:
                         _LOGGER.error("Failed to create calendar event for %s: %s", event_key, ex)
+
+                except Exception as ex:
+                    _LOGGER.error("Error processing date %s for event creation: %s", iso_start_date, ex)
