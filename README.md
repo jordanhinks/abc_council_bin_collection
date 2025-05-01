@@ -17,7 +17,7 @@ Home Assistant component to pull data from Northern Ireland ABC Council website 
 
 When the integration is added, the **Configure** button offer additional options/features.
 
-- Update Interval (default: 96) - change the frequency it fetches data in hours.
+- Update Interval (default: 96, minimum: 6) - change the frequency it fetches data in hours.
 - Create Calendar Events (default: unticked) - this depends on calendar such as Google Calendar to be installed and have read/write permissions. It allows you to choose for calendar events to be created automatically.
 - Calendar Entity - Lets you specify the name of the calendar entity either as "calendar.my_calendar", or "my_calendar", you will find the calendar name in your Home Assistant instance.
 - Domestic Collections Summary, Recycling Collections Summary, and Garden & Food Collections Summary - allows you to choose the preferred calendar event name for each such as if you prefer the bin color.
