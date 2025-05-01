@@ -22,6 +22,11 @@ When the integration is added, the **Configure** button offer additional options
 - Calendar Entity - Lets you specify the name of the calendar entity either as "calendar.my_calendar", or "my_calendar", you will find the calendar name in your Home Assistant instance.
 - Domestic Collections Summary, Recycling Collections Summary, and Garden & Food Collections Summary - allows you to choose the preferred calendar event name for each such as if you prefer the bin color.
 
+### Entities
+
+For further control if you wish to use the dates; an entity has been created for each collection type with the state being the next collection date, then the subsequent dates being placed within the state attributes under **all_dates**.
+
 ## Note
 
-If **Create Calendar Events** is ticked and then either the integration or Home Assistant instance is restarted, it will create the calendar events again until a suitable persistant solution is put in place.
+- If **Create Calendar Events** is ticked and then either the integration or Home Assistant instance is restarted, it will create the calendar events again until a suitable persistant solution is put in place.
+- Upon saving the Configure options it will reload the integration.
