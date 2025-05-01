@@ -2,7 +2,7 @@ import voluptuous as vol
 from urllib.parse import urlparse, parse_qs
 from homeassistant import config_entries
 from homeassistant.core import callback
-from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL
+from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL, MIN_UPDATE_INTERVAL  # Import the minimum interval
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,7 +54,6 @@ class BinCollectionOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options flow for the Bin Collection integration."""
 
     def __init__(self, config_entry):
-        # Save the configuration entry under a non-conflicting name.
         self._config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
@@ -76,12 +75,12 @@ class BinCollectionOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(step_id="init", data_schema=self._get_options_schema())
 
     def _get_options_schema(self):
-        """Define the schema for options."""
+        """Define the schema for options, ensuring update_interval has a minimum value."""
         return vol.Schema({
             vol.Required(
                 "update_interval", 
                 default=self._config_entry.options.get("update_interval", DEFAULT_UPDATE_INTERVAL)
-            ): int,
+            ): vol.All(vol.Coerce(int), vol.Range(min=MIN_UPDATE_INTERVAL)),  # Enforce minimum
             vol.Required(
                 "create_calendar_events", 
                 default=self._config_entry.options.get("create_calendar_events", False)
