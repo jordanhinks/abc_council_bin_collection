@@ -1,0 +1,27 @@
+{
+  "title": "Bin Collection",
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "user_address": "Address"
+        },
+        "description": "Enter your address as a numeric value or a URL containing it."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "update_interval": "Update Interval (in hours)",
+          "create_calendar_events": "Create Calendar Events",
+          "calendar_entity": "Calendar Entity",
+          "summary_domestic": "Domestic Collections Summary",
+          "summary_recycling": "Recycling Collections Summary",
+          "summary_garden_food": "Garden & Food Collections Summary"
+        }
+      }
+    }
+  }
+}
