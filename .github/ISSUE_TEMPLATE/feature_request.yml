@@ -1,0 +1,28 @@
+name: ⭐ Feature request
+description: Purpose something new.
+labels: ["feature"]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Please search existing feature list before submitting a feature.
+    - type: textarea
+      id: suggestion
+      attributes:
+          label: Suggestion?
+          description: A clear and concise description of what the feature is.
+      validations:
+          required: true
+    - type: textarea
+      id: purpose
+      attributes:
+          label: Purpose?
+          description: How will this benefit the user, how can it be used?
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Extra comments
+          description: This can include extra information to backup why the feature may be beneficial to be implemented.
+      validations:
+          required: false
