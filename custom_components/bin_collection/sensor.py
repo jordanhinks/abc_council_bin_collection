@@ -3,14 +3,16 @@ import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.util import slugify
 
 from .const import DOMAIN, DEFAULT_SENSOR_NAMES
 from .coordinator import BinCollectionDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
-    """Set up the sensor platform for Bin Collection integration."""
+    """Set up the sensor platform for the Bin Collection integration."""
     coordinator: BinCollectionDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
     sensors = []
     # Create a sensor for each default sensor name.
@@ -18,14 +20,24 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         sensors.append(BinCollectionSensor(coordinator, sensor_name))
     async_add_entities(sensors, True)
 
+
 class BinCollectionSensor(SensorEntity):
     """Sensor representing bin collection dates for a specific bin type."""
 
     def __init__(self, coordinator: BinCollectionDataUpdateCoordinator, sensor_name: str):
         self.coordinator = coordinator
         self._sensor_name = sensor_name
-        self._attr_name = f"{sensor_name} Collection"
-        self._attr_unique_id = f"{coordinator.address}_{sensor_name.replace(' ', '_')}"
+
+        # Normalize the sensor name:
+        # If sensor_name ends with " Collections", remove the trailing 's' so it becomes singular.
+        if sensor_name.endswith(" Collections"):
+            normalized = sensor_name[:-1]  # "Domestic Collections" becomes "Domestic Collection"
+        else:
+            # Otherwise, append " Collection" if desired.
+            normalized = f"{sensor_name} Collection"
+
+        self._attr_name = normalized
+        self._attr_unique_id = f"{coordinator.address}_{slugify(normalized)}"
         self._attr_state = "Unknown"
 
     async def async_added_to_hass(self):
