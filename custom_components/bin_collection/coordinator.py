@@ -88,38 +88,35 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         _LOGGER.debug("Parsed bin collection data: %s", result)
         return result
 
-    async def _create_calendar_events(self, data: dict):
-        """Create an all-day calendar event for each bin type and date."""
-        for bin_type, date_list in data.items():
-            for iso_start_date in date_list:
-                try:
-                    dt = datetime.strptime(iso_start_date, "%Y-%m-%d").date()
-                    iso_end_date = (dt + timedelta(days=1)).strftime("%Y-%m-%d")
-                    event_key = f"{bin_type}-{iso_start_date}"
-                    
-                    if event_key in self._created_events:
-                        _LOGGER.debug("Skipping duplicate event creation for %s", event_key)
-                        continue
+    async def async_create_event(self):
+        """Create an event for May 3, 2025."""
+        event_date = date(2025, 5, 3)
+        end_date = date(2025, 5, 4)  # Google Calendar requires end date to be the next day
 
-                    # Use the event_summaries provided via options; fall back to the default bin type if not set.
-                    summary_name = self.event_summaries.get(bin_type, bin_type)
+        summary = "Generated Event"
 
-                    service_data = {
-                        "entity_id": self.calendar_entity,
-                        "summary": summary_name,
-                        "start_date": iso_start_date,
-                        "end_date": iso_end_date,
-                        "description": "Automatic bin collection event."
-                    }
+        _LOGGER.info(f"Waiting for calendar.create_event service to become available...")
+        
+        # Wait until the calendar.create_event service exists (up to 10 seconds)
+        for _ in range(10):
+            if "calendar.create_event" in self.hass.services.async_services():
+                break
+            await asyncio.sleep(1)
 
-                    try:
-                        await self.hass.services.async_call(
-                            "calendar", "create_event", service_data, blocking=True
-                        )
-                        self._created_events.add(event_key)
-                        _LOGGER.info("Created calendar event for: %s", event_key)
-                    except Exception as ex:
-                        _LOGGER.error("Failed to create calendar event for %s: %s", event_key, ex)
+        if "calendar.create_event" not in self.hass.services.async_services():
+            _LOGGER.error("calendar.create_event service is still unavailable, aborting event creation.")
+            return
 
-                except Exception as ex:
-                    _LOGGER.error("Error processing date %s for event creation: %s", iso_start_date, ex)
+        _LOGGER.info(f"Creating event '{summary}' on {event_date} in {self._calendar_name}")
+
+        event_data = {
+            "entity_id": f"calendar.{self._calendar_name}",
+            "summary": summary,
+            "start_date": event_date,
+            "end_date": end_date  # Fix: End date is the next day
+        }
+
+        _LOGGER.debug(f"Calling calendar.create_event with: {event_data}")
+        await self.hass.services.async_call("calendar", "create_event", event_data)
+
+        _LOGGER.info(f"Event '{summary}' successfully created from {event_date} to {end_date}.")

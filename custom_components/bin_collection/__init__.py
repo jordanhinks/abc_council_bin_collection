@@ -12,7 +12,6 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up bin_collection from a config entry."""
     if not entry.data.get("address"):
         _LOGGER.error("Missing address in entry data!")
         return False  # Prevent setup if no valid address is found

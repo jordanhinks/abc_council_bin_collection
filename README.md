@@ -4,13 +4,13 @@ Home Assistant component to pull data from Northern Ireland ABC Council website 
 
 ## Installation:
 
-1. Install this component by copying [these files]([https://github.com/custom-components/sensor.sonarr_upcoming_media/tree/master/custom_components/sonarr_upcoming_media](https://github.com/jordanhinks/bin_collection/tree/main/custom_components/bin_collection)) to `/custom_components/bin_collection/`.
+1. Install this component by copying [these files]([https://github.com/custom-components/sensor.sonarr_upcoming_media/tree/master/custom_components/sonarr_upcoming_media](https://github.com/jordanhinks/abc_council_bin_collection/tree/main/custom_components/abc_council_bin_collection)) to `/custom_components/abc_council_bin_collection/`.
 2. Restart your Home Assistant instance
 3. Open a new browser tab and navigate to [ABC Council website](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)
 4. Enter your post code, click submit then house number, click submit
 5. Copy either the entire website address, or just the value after **?address=**
 6. Navigate to Settings > Devices & Services
-7. Click Add Integration, search **Bin Collection** then add
+7. Click Add Integration, search **ABC Council Bin Collection** then add
 8. Paste the website address/value from step 5, then click submit
 
 ### Configure options

@@ -26,7 +26,7 @@ class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 _LOGGER.debug("Creating entry with address: %s", sanitized_address)
                 return self.async_create_entry(
-                    title="Bin Collection",
+                    title="ABC Council Bin Collection",
                     data={"address": sanitized_address},
                     options={}  # Ensure options are initialized
                 )
