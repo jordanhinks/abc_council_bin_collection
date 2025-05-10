@@ -15,6 +15,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     """Set up the sensor platform for the Bin Collection integration."""
     coordinator: BinCollectionDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
     sensors = []
+    
     # Create a sensor for each default sensor name.
     for sensor_name in DEFAULT_SENSOR_NAMES:
         sensors.append(BinCollectionSensor(coordinator, sensor_name))
@@ -27,13 +28,10 @@ class BinCollectionSensor(SensorEntity):
     def __init__(self, coordinator: BinCollectionDataUpdateCoordinator, sensor_name: str):
         self.coordinator = coordinator
         self._sensor_name = sensor_name
-
-        # Normalize the sensor name:
-        # If sensor_name ends with " Collections", remove the trailing 's' so it becomes singular.
+        
         if sensor_name.endswith(" Collections"):
-            normalized = sensor_name[:-1]  # "Domestic Collections" becomes "Domestic Collection"
+            normalized = sensor_name[:-1]
         else:
-            # Otherwise, append " Collection" if desired.
             normalized = f"{sensor_name} Collection"
 
         self._attr_name = normalized

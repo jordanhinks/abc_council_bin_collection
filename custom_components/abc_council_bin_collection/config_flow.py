@@ -2,7 +2,7 @@ import voluptuous as vol
 from urllib.parse import urlparse, parse_qs
 from homeassistant import config_entries
 from homeassistant.core import callback
-from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL, MIN_UPDATE_INTERVAL  # Import the minimum interval
+from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL, MIN_UPDATE_INTERVAL
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -68,6 +68,7 @@ class BinCollectionOptionsFlowHandler(config_entries.OptionsFlow):
 
             _LOGGER.debug("User input received: %s", user_input)
             result = self.async_create_entry(title="", data=user_input)
+            
             # Reload the integration upon saving options.
             await self.hass.config_entries.async_reload(self._config_entry.entry_id)
             return result

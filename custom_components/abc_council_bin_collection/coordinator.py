@@ -91,7 +91,7 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
     async def async_create_event(self):
         """Create an event for May 3, 2025."""
         event_date = date(2025, 5, 3)
-        end_date = date(2025, 5, 4)  # Google Calendar requires end date to be the next day
+        end_date = date(2025, 5, 4)
 
         summary = "Generated Event"
 
@@ -113,7 +113,7 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
             "entity_id": f"calendar.{self._calendar_name}",
             "summary": summary,
             "start_date": event_date,
-            "end_date": end_date  # Fix: End date is the next day
+            "end_date": end_date
         }
 
         _LOGGER.debug(f"Calling calendar.create_event with: {event_data}")
