@@ -1,6 +1,6 @@
 {
     "name": "ABC Council Bin Collection",
     "content_in_root": false,
-    "filename": "abc_council_bin_collection.zip",
-    "render_readme": true
+    "render_readme": true,
+    "country": "UK"
 }
