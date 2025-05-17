@@ -27,15 +27,5 @@
         "description": "Configure additional options relating to data fetch interval and creating calendar events."
       }
     }
-  },
-  "button": {
-    "clear_bin_events": "Clear Bin Events"
-  },
-  "sensor": {
-    "no_collection": "No collection scheduled",
-    "unavailable": "Unavailable"
-  },
-  "calendar": {
-    "event_created": "Automatic bin collection event."
   }
 }

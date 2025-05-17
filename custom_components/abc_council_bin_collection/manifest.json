@@ -13,6 +13,5 @@
     "beautifulsoup4>=4.9.0",
     "async-timeout>=3.0.0"
   ],
-  "supported_platforms": ["sensor", "button"],
   "version": "0.3.0"
 }
