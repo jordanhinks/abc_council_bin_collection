@@ -1,27 +1,31 @@
 {
-  "title": "ABC Council Bin Collection",
-  "config": {
-    "step": {
-      "user": {
-        "data": {
-          "user_address": "Address"
+    "title": "ABC Council Bin Collection",
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "user_address": "Address"
+                },
+                "description": "Enter complete URL or just address value."
+            }
         },
-        "description": "Enter your address as a numeric value or a URL containing it."
-      }
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "data": {
-          "update_interval": "Update Interval (in hours)",
-          "create_calendar_events": "Create Calendar Events",
-          "calendar_entity": "Calendar Entity",
-          "summary_domestic": "Domestic Collections Summary",
-          "summary_recycling": "Recycling Collections Summary",
-          "summary_garden_food": "Garden & Food Collections Summary"
+        "error": {
+            "invalid_address": "Address provided is not valid. Please enter valid URL/address value."
         }
-      }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "update_interval": "Update Interval (in hours)",
+                    "create_calendar_events": "Create Calendar Events",
+                    "calendar_entity": "Calendar Entity",
+                    "summary_domestic": "Domestic Collections Summary",
+                    "summary_recycling": "Recycling Collections Summary",
+                    "summary_garden_food": "Garden & Food Collections Summary"
+                },
+                "description": "Configure additional options relating to data fetch interval and creating calendar events."
+            }
+        }
     }
-  }
 }
