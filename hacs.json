@@ -2,5 +2,7 @@
     "name": "ABC Council Bin Collection",
     "content_in_root": false,
     "render_readme": true,
-    "country": "GB"
+    "country": "GB",
+    "domains": ["sensor", "button"],
+    "iot_class": "cloud_polling"
 }
