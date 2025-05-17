@@ -6,7 +6,10 @@
         "data": {
           "user_address": "Address"
         },
-        "description": "Enter your address as a numeric value or a URL containing it."
+        "description": "Enter complete URL or just address value.",
+        "error": {
+          "invalid_address": "Address provided is not valid. Please enter valid URL/address value."
+        }
       }
     }
   },
@@ -20,8 +23,19 @@
           "summary_domestic": "Domestic Collections Summary",
           "summary_recycling": "Recycling Collections Summary",
           "summary_garden_food": "Garden & Food Collections Summary"
-        }
+        },
+        "description": "Configure additional options relating to data fetch interval and creating calendar events."
       }
     }
+  },
+  "button": {
+    "clear_bin_events": "Clear Bin Events"
+  },
+  "sensor": {
+    "no_collection": "No collection scheduled",
+    "unavailable": "Unavailable"
+  },
+  "calendar": {
+    "event_created": "Automatic bin collection event."
   }
 }
