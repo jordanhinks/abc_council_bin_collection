@@ -40,7 +40,7 @@ class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             
             # Validate the sanitized address: must be non-empty and numeric.
             if not sanitized_address or not sanitized_address.isdigit():
-                errors["user_address"] = "bin_collection_invalid_address"
+                errors["base"] = "invalid_address"
                 _LOGGER.error("Invalid address input: %s", address_input)
             else:
                 _LOGGER.debug("Creating entry with sanitized address: %s", sanitized_address)
