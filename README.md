@@ -26,7 +26,8 @@ When the integration is added, the **Configure** button offer additional options
 
 For further control if you wish to use the dates; an entity has been created for each collection type with the state being the next collection date, then the subsequent dates being placed within the state attributes under **all_dates**.
 
+A button entity has also been created which allows you to clear persistent storage for all calendar events created.
+
 ## Note
 
-- If **Create Calendar Events** is ticked and then either the integration or Home Assistant instance is restarted, it will create the calendar events again until a suitable persistant solution is put in place.
-- Upon saving the Configure options it will reload the integration.
+- If calendar events aren't automatically created after ticking option to create calendar events, just reload the integration.
