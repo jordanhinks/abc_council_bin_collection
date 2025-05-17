@@ -1,0 +1,26 @@
+name: Validate Component Files
+on: [pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: check-files
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Check manifest.json
+        run: |
+          DOMAIN=$(jq -r '.domain' custom_components/abc_council_bin_collection/manifest.json)
+          if [[ "$DOMAIN" != "abc_council_bin_collection" ]]; then
+            echo "Error: Incorrect domain in manifest.json"
+            exit 1
+          fi
+
+      - name: Check const.py
+        run: |
+          DOMAIN=$(grep -oP '(?<=DOMAIN = ")[^"]+' custom_components/abc_council_bin_collection/const.py)
+          if [[ "$DOMAIN" != "abc_council_bin_collection" ]]; then
+            echo "Error: Incorrect DOMAIN in const.py"
+            exit 1
+          fi
