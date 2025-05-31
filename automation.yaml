@@ -1,0 +1,42 @@
+alias: Notify - Bin Collection Reminder
+description: ""
+triggers:
+  - at: "20:00:00"
+    trigger: time
+conditions:
+  - condition: template
+    value_template: >
+      {% set tomorrow = (now() + timedelta(days=1)).strftime('%Y-%m-%d') %} {{
+      states('sensor.domestic_collections') == tomorrow
+         or states('sensor.recycling_collections') == tomorrow
+         or states('sensor.garden_food_collections') == tomorrow }}
+actions:
+  - data:
+      title: Bin collection tomorrow
+      message: >
+        {%- set tomorrow = (now() + timedelta(days=1)).strftime('%Y-%m-%d') -%}
+        {%- set bins_to_collect = [] -%} {%- if
+        states('sensor.domestic_collections') == tomorrow -%}
+          {%- set bins_to_collect = bins_to_collect + ["Blue"] -%}
+        {%- endif -%} {%- if states('sensor.recycling_collections') == tomorrow
+        -%}
+          {%- set bins_to_collect = bins_to_collect + ["Green"] -%}
+        {%- endif -%} {%- if states('sensor.garden_food_collections') ==
+        tomorrow -%}
+          {%- set bins_to_collect = bins_to_collect + ["Brown"] -%}
+        {%- endif -%} {%- if bins_to_collect | length == 1 -%}
+          Put out {{ bins_to_collect[0] }} bin.
+        {%- elif bins_to_collect | length > 1 -%}
+          {%- set first_parts = bins_to_collect[0:-1] -%}
+          {%- set last = bins_to_collect[-1] -%}
+          Put out {{ first_parts | join(', ') }} and {{ last }} bins.
+        {%- endif -%}
+      data:
+        persistent: true
+        ttl: 0
+        priority: high
+        channel: alarm_stream
+        actions:
+          - action: BIN_DONE
+            title: Task Complete
+    action: notify.mobile_app_phone_example

@@ -14,13 +14,15 @@ jobs:
           DOMAIN=$(jq -r '.domain' custom_components/abc_council_bin_collection/manifest.json)
           if [[ "$DOMAIN" != "abc_council_bin_collection" ]]; then
             echo "Error: Incorrect domain in manifest.json"
+            echo "Extracted value: '$DOMAIN'"
             exit 1
           fi
 
       - name: Check const.py
         run: |
-          DOMAIN=$(grep -oP '(?<=DOMAIN = ")[^"]+' custom_components/abc_council_bin_collection/const.py)
+          DOMAIN=$(grep -oP '(?<=DOMAIN: str = ")[^"]+' custom_components/abc_council_bin_collection/const.py)
           if [[ "$DOMAIN" != "abc_council_bin_collection" ]]; then
             echo "Error: Incorrect DOMAIN in const.py"
+            echo "Extracted value: '$DOMAIN'"
             exit 1
           fi
