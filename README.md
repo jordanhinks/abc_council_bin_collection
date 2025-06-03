@@ -2,16 +2,31 @@
 
 Home Assistant component to pull data from Northern Ireland ABC Council website regarding bin collection dates based on address provided.
 
-## Installation:
+## Easy Installation:
 
-1. Install this component by copying [these files]([https://github.com/custom-components/sensor.sonarr_upcoming_media/tree/master/custom_components/sonarr_upcoming_media](https://github.com/jordanhinks/abc_council_bin_collection/tree/main/custom_components/abc_council_bin_collection)) to `/custom_components/abc_council_bin_collection/`.
-2. Restart your Home Assistant instance
-3. Open a new browser tab and navigate to [ABC Council website](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)
-4. Enter your post code, click submit then house number, click submit
-5. Copy either the entire website address, or just the value after **?address=**
-6. Navigate to Settings > Devices & Services
-7. Click Add Integration, search **ABC Council Bin Collection** then add
-8. Paste the website address/value from step 5, then click submit
+1. Navigate to your HACs instance
+2. Search ABC Council Bin Collection then download latest version
+3. Restart your Home Assistant instance
+
+<details>
+<summary style="list-style: none"><h2><b style="cursor: pointer">Manual installation:</b></h2></summary>
+
+  1. Install this component by copying [these files]([https://github.com/custom-components/sensor.sonarr_upcoming_media/tree/master/custom_components/sonarr_upcoming_media](https://github.com/jordanhinks/abc_council_bin_collection/tree/main/custom_components/abc_council_bin_collection)) to `/custom_components/abc_council_bin_collection/`.
+  2. Restart your Home Assistant instance
+</details>
+</details>
+
+## Setup Instructions:
+
+<a href="https://my.home-assistant.io/redirect/config_flow_start?domain=abc_council_bin_collection" class="my badge" target="_blank"><img src="https://my.home-assistant.io/badges/config_flow_start.svg"></a>
+
+1. Click above button **OR** navigate to Settings > Devices & Services, click Add Integration then search ABC Council Bin Collection
+1. Open a new browser tab and navigate to [ABC Council website](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)
+2. Enter your post code, click submit then house number, click submit
+3. Copy either the entire website address, or just the value after **?address=**
+4. Navigate to Settings > Devices & Services
+5. Click Add Integration, search **ABC Council Bin Collection** then add
+6. Paste the website address/value from step 5, then click submit
 
 ### Configure options
 
