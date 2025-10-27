@@ -1,9 +1,8 @@
 """
 Persistent storage module for the ABC Council Bin Collection integration.
 
-This module defines a BinCollectionStorage class that wraps Home Assistant’s 
-persistent storage helper to load, save, and manage bin collection event data.
-It automatically cleans out events older than a configured threshold.
+Defines BinCollectionStorage class for storing the data persistently across
+load, save and manage states.
 """
 
 import logging
@@ -17,11 +16,7 @@ from homeassistant.core import HomeAssistant
 _LOGGER = logging.getLogger(__name__)
 
 class BinCollectionStorage:
-    """Handles persistent storage for bin collection events"""
-
     def __init__(self, hass: HomeAssistant) -> None:
-        """Initialize the persistent storage helper"""
-
         self.store = storage.Store(hass, 1, "bin_collection_events")
         
         # Storing events as a mapping from date strings to a list of event summaries
@@ -61,8 +56,6 @@ class BinCollectionStorage:
 
     async def save_data(self) -> None:
         """
-        Persist stored event dates
-
         Uses Home Assistant's storage helper to save the current state of self.data.
         """
 

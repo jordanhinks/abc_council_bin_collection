@@ -1,10 +1,13 @@
 """
 Config flow for the ABC Council Bin Collection integration.
 
-Handles the user input for setting up the integration, including sanitation 
-and validation of the address. Also provides an options flow for changing
-data interval along with enabling/disabling calendar event creation feature.
+Handles user input for setting up integration, including sanitation 
+and validation of the address.
+
+Provides option flow for changing data interval along with toggling 
+calendar event creation.
 """
+
 import logging
 import voluptuous as vol
 
@@ -18,19 +21,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handles config flow"""
     
     VERSION = 1
 
     async def async_step_user(
         self, user_input: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        """
-        Handle the initial step where the user provides the address.
         
-        If the provided address is a URL, it sanitizes and extracts the numeric address.
-        Returns a form for the user until valid data is entered.
-        """
 
         errors: Dict[str, str] = {}
 
@@ -57,10 +54,7 @@ class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     def _sanitize_address(self, address_input: str) -> str:
         """
-        Extract and sanitize the numeric address if a full URL is provided.
-        
-        If the address starts with 'http(s)://', it attempts to extract the 'address'
-        parameter from the URL's query string.
+        Sanitises and extracts the the "address" parameter if complete URL provided.
         """
 
         address_input = address_input.strip()
@@ -79,7 +73,9 @@ class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
-        """Get the options flow for the Bin Collection integration"""
+        """
+        Get the options flow for the Bin Collection integration.
+        """
 
         return BinCollectionOptionsFlowHandler(config_entry)
 
@@ -120,7 +116,7 @@ class BinCollectionOptionsFlowHandler(config_entries.OptionsFlow):
 
     def _get_options_schema(self) -> vol.Schema:
         """
-        Define the options schema.
+        Options schema.
         """
 
         return vol.Schema({

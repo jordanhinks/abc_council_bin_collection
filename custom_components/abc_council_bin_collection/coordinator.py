@@ -1,14 +1,20 @@
+"""
+Coordinator platform for the ABC Council Bin Collection integration.
+
+This fetches and parsing data, and creates the calendar events.
+"""
+
 from __future__ import annotations
 
 import logging
 import asyncio
 import async_timeout
+import re
 
 from .const import EVENT_CREATION_DELAY, EVENT_CREATION_TIMEOUT
 from .storage import BinCollectionStorage
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
-from bs4 import BeautifulSoup
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -23,17 +29,25 @@ BIN_TYPES: Dict[str, str] = {
 }
 
 class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
-    """
-    Manages fetching bin collection data and optionally creates calendar events
-
-    This coordinator is responsible for:
-      - Fetching and parsing HTML data from the bin collection website
-      - Managing persistent storage through BinCollectionStorage
-      - Creating calendar events if enabled
-    """
-
-    # DEBUG only - used for reducing calendar create event calls to avoid 403 errors
-    # VALID_DATES: set[str] = {"2025-05-20", "2025-05-27"}  # List of allowed dates
+    
+    BIN_COLLECTION_BLOCK_PATTERN = re.compile(
+        # Match the start of the heading div and capture the class name
+        r'<div class="heading (bg-black|bg-green|bg-brown)">.*?</div>\s*<hr>\s*</div>\s*'
+        # Match the div that contains the date entries
+        r'<div class="col-sm-12 col-md-9">\s*'
+        # Capture the entire HTML block containing the date <h4> tags (Group 2)
+        r'(.*?)'
+        # Non-greedy match for everything up to the next image/divider block
+        r'</div>\s*<div class="col-sm-12 col-md-3">',
+        re.DOTALL
+    )
+    
+    # Pre-compile the simpler pattern for finding dates within the captured block (Group 2).
+    # Group 1: The date (DD/MM/YYYY)
+    DATE_EXTRACT_PATTERN = re.compile(
+        r'<h4><i class="fa fa-calendar".*?></i>\s*(\d{2}/\d{2}/\d{4})\s*</h4>',
+        re.DOTALL
+    )
 
     def __init__(
         self,
@@ -46,14 +60,6 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
     ) -> None:
         """
         Initialise the coordinator
-
-        Args:
-            hass: Home Assistant instance.
-            address: The bin collection address (numeric).
-            update_interval: Update interval as a timedelta object.
-            create_calendar_events: Whether to create calendar events.
-            calendar_entity: The entity ID of the target calendar.
-            event_summaries: A mapping of bin types to event summary names.
         """
         self.hass = hass
         self.address = address
@@ -62,23 +68,15 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         self.calendar_entity = calendar_entity
         self.event_summaries = event_summaries
 
-        # Initialize persistent storage.
+        # Initialize persistent storage
         self.storage: BinCollectionStorage = BinCollectionStorage(hass)
 
         super().__init__(hass, _LOGGER, name="Bin Collection Data", update_interval=update_interval)
-
-    # DEBUG only - used for reducing calendar create event calls to avoid 403 errors
-    # def should_create_event(self, date_str: str) -> bool:
-    #     """Return True if provided date equals dates in VALID_DATES"""
-    #     return date_str in self.VALID_DATES
 
     async def _async_update_data(self) -> Dict[str, List[str]]:
         """
         Fetch HTML data from the remote URL, process and parse bin collection dates,
         and create calendar events (if enabled)
-
-        Returns:
-            A dictionary mapping collection types to lists of dates
         """
 
         await self.load_stored_events()
@@ -96,7 +94,6 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
             except Exception as err:
                 _LOGGER.error("Error fetching data (attempt %d): %s", attempt + 1, err)
                 if attempt == 2:
-                    # Returning empty dict ensures we always return a dict
                     return {}
 
         data = await self.hass.async_add_executor_job(self._parse_html, html)
@@ -114,7 +111,7 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
 
     def _parse_html(self, html: str) -> Dict[str, List[str]]:
         """
-        Parse the HTML content to extract bin collection dates.
+        Parse the HTML content to extract bin collection dates using a two-stage RegEx process.
 
         Args:
             html: The HTML content as a string.
@@ -124,42 +121,53 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         """
 
         result: Dict[str, List[str]] = {}
-        soup = BeautifulSoup(html, "html.parser")
-
-        for class_name, default_title in BIN_TYPES.items():
-            target_divs = soup.find_all("div", class_=class_name)
+        
+        for match in self.BIN_COLLECTION_BLOCK_PATTERN.finditer(html):
+            class_name = match.group(1) 
+            bin_type_title = BIN_TYPES.get(class_name)
+            
+            collection_block_html = match.group(2)
+            
+            if not bin_type_title:
+                _LOGGER.warning("Unknown bin type class found: %s", class_name)
+                continue
+            
             dates_list: List[str] = []
+            
+            for date_match in self.DATE_EXTRACT_PATTERN.finditer(collection_block_html):
+                date_text = date_match.group(1).strip()
+                
+                try:
+                    date_obj = datetime.strptime(date_text, "%d/%m/%Y")
 
-            for target_div in target_divs:
-                sibling_div = target_div.find_parent().find_next_sibling("div")
-                if sibling_div:
-                    for h4 in sibling_div.find_all("h4"):
-                        date_text = h4.text.strip()
-                        try:
-                            date_obj = datetime.strptime(date_text, "%d/%m/%Y")
-                            formatted_date = date_obj.strftime("%Y-%m-%d")  # ISO format
-                            dates_list.append(formatted_date)
-                        except ValueError:
-                            _LOGGER.warning("Skipping invalid date format: %s", date_text)
-                else:
-                    _LOGGER.warning("No sibling div found for bin type '%s'.", default_title)
+                    # Format to ISO 8601 (YYYY-MM-DD)
+                    formatted_date = date_obj.strftime("%Y-%m-%d")
+                    dates_list.append(formatted_date)
+                except ValueError:
+                    _LOGGER.warning("Skipping invalid date format: %s", date_text)
 
-            result[default_title] = dates_list if dates_list else ["No collection scheduled"]
+            # Store the results
+            if dates_list:
+                result[bin_type_title] = dates_list
+            else:
+                # Add a default message if no dates were found for a known bin type
+                result[bin_type_title] = ["No collection scheduled"]
+
+        # Ensure all expected bin types are in the result, even if no dates were found (which prevents an error later)
+        for _, default_title in BIN_TYPES.items():
+            if default_title not in result:
+                result[default_title] = ["No collection scheduled"]
 
         return result
 
     async def load_stored_events(self) -> None:
         """Load persistent bin collection events into memory"""
         await self.storage.load_data()
-        # Optionally log loaded events for debugging:
         _LOGGER.debug("Loaded stored events: %s", self.storage.data)
 
     async def _create_calendar_events(self, data: Dict[str, List[str]]) -> None:
         """
         Create calendar events based on parsed data. Only creates events if they are not persistently stored.
-
-        Args:
-            data: A dictionary mapping bin types to lists of dates.
         """
 
         for bin_type, dates in data.items():
@@ -167,11 +175,7 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
             summary_name = self.event_summaries.get(bin_type, bin_type)
 
             for date in dates:
-                # DEBUG only - used for reducing calendar create event calls to avoid 403 errors
-                # Only allow creation for allowed dates.
-                # if not self.should_create_event(date):
-                #     continue
-
+                
                 if date in self.storage.data and bin_type in self.storage.data[date]:
                     _LOGGER.info("Skipping event creation for %s on %s — already stored.", summary_name, date)
                     continue

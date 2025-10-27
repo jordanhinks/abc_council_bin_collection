@@ -1,7 +1,7 @@
 """
 Button platform for ABC Council Bin Collection integration.
 
-Provides a button entity that, when pressed, clears persistent bin collection events.
+Provides a button enttity that when pressed clears persistent bin collection events.
 """
 
 import logging
