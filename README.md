@@ -11,31 +11,30 @@ Home Assistant component to pull data from Northern Ireland ABC Council website 
 <details>
 <summary style="list-style: none"><h2><b style="cursor: pointer">Manual installation:</b></h2></summary>
 
-  1. Install this component by copying [these files]([https://github.com/custom-components/sensor.sonarr_upcoming_media/tree/master/custom_components/sonarr_upcoming_media](https://github.com/jordanhinks/abc_council_bin_collection/tree/main/custom_components/abc_council_bin_collection)) to `/custom_components/abc_council_bin_collection/`.
-  2. Restart your Home Assistant instance
-</details>
-</details>
+1. Install this component by copying [these files](<[https://github.com/custom-components/sensor.sonarr_upcoming_media/tree/master/custom_components/sonarr_upcoming_media](https://github.com/jordanhinks/abc_council_bin_collection/tree/main/custom_components/abc_council_bin_collection)>) to `/custom_components/abc_council_bin_collection/`.
+2. Restart your Home Assistant instance
+ </details>
+ </details>
 
 ## Setup Instructions:
 
 <a href="https://my.home-assistant.io/redirect/config_flow_start?domain=abc_council_bin_collection" class="my badge" target="_blank"><img src="https://my.home-assistant.io/badges/config_flow_start.svg"></a>
 
-1. Click above button **OR** navigate to Settings > Devices & Services, click Add Integration then search ABC Council Bin Collection
-1. Open a new browser tab and navigate to [ABC Council website](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)
+1. Navigate to [ABC Council website](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)
 2. Enter your post code, click submit then house number, click submit
-3. Copy either the entire website address, or just the value after **?address=**
-4. Navigate to Settings > Devices & Services
-5. Click Add Integration, search **ABC Council Bin Collection** then add
-6. Paste the website address/value from step 5, then click submit
+3. Copy either the entire websire URL, or just the value after **?address=**
+4. Click above button **OR** navigate to Settings > Devices & Services
+5. click Add Integration, search ABC Council Bin Collection, then click the ABC Council Bin Collection integration
+6. Paste the URL/value from **step 3** then click Submit
 
 ### Configure options
 
 When the integration is added, the **Configure** button offer additional options/features.
 
-- Update Interval (default: 96, minimum: 6) - change the frequency it fetches data in hours.
-- Create Calendar Events (default: unticked) - this depends on calendar such as Google Calendar to be installed and have read/write permissions. It allows you to choose for calendar events to be created automatically.
-- Calendar Entity - Lets you specify the name of the calendar entity either as "calendar.my_calendar", or "my_calendar", you will find the calendar name in your Home Assistant instance.
-- Domestic Collections Summary, Recycling Collections Summary, and Garden & Food Collections Summary - allows you to choose the preferred calendar event name for each such as if you prefer the bin color.
+-   Update Interval (default: 96, minimum: 6) - change the frequency it fetches data in hours.
+-   Create Calendar Events (default: unticked) - this depends on calendar such as Google Calendar to be installed and have read/write permissions. It allows you to choose for calendar events to be created automatically.
+-   Calendar Entity - Lets you specify the name of the calendar entity either as "calendar.my_calendar", or "my_calendar", you will find the calendar name in your Home Assistant instance.
+-   Domestic Collections Summary, Recycling Collections Summary, and Garden & Food Collections Summary - allows you to choose the preferred calendar event name for each such as if you prefer the bin color.
 
 ### Entities
 
@@ -45,4 +44,4 @@ A button entity has also been created which allows you to clear persistent stora
 
 ## Note
 
-- If calendar events aren't automatically created after ticking option to create calendar events, just reload the integration.
+-   If calendar events aren't automatically created after ticking option to create calendar events, just reload the integration.
