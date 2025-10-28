@@ -1,0 +1,31 @@
+{
+    "title": "ABC Tarybos Šiukšlių Surinkimas",
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "user_address": "Adresas"
+                },
+                "description": "Įveskite visą URL arba tik adreso reikšmę iš [ABC Tarybos svetainės](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)."
+            }
+        },
+        "error": {
+            "invalid_address": "Pateiktas adresas neteisingas. Prašome įvesti teisingą URL/adreso reikšmę."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "update_interval": "Atnaujinimo Intervalas (valandomis)",
+                    "create_calendar_events": "Kurti Kalendoriaus Įvykius",
+                    "calendar_entity": "Kalendoriaus Eilutė (Entity)",
+                    "summary_domestic": "Buitinių Atliekų Surinkimo Santrauka",
+                    "summary_recycling": "Perdirbimo Atliekų Surinkimo Santrauka",
+                    "summary_garden_food": "Sodo ir Maisto Atliekų Surinkimo Santrauka"
+                },
+                "description": "Konfigūruokite papildomas parinktis, susijusias su duomenų gavimo intervalu ir kalendoriaus įvykių kūrimu."
+            }
+        }
+    }
+}

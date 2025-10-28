@@ -1,0 +1,31 @@
+{
+    "title": "Recogida de Contenedores del Consejo ABC",
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "user_address": "Dirección"
+                },
+                "description": "Ingrese la URL completa o solo el valor de la dirección desde el [sitio web del Consejo ABC](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)."
+            }
+        },
+        "error": {
+            "invalid_address": "La dirección proporcionada no es válida. Por favor, ingrese una URL/dirección válida."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "update_interval": "Intervalo de Actualización (en horas)",
+                    "create_calendar_events": "Crear Eventos de Calendario",
+                    "calendar_entity": "Entidad de Calendario",
+                    "summary_domestic": "Resumen de Recogidas Domésticas",
+                    "summary_recycling": "Resumen de Recogidas de Reciclaje",
+                    "summary_garden_food": "Resumen de Recogidas de Jardín y Alimentos"
+                },
+                "description": "Configure opciones adicionales relacionadas con el intervalo de obtención de datos y la creación de eventos de calendario."
+            }
+        }
+    }
+}

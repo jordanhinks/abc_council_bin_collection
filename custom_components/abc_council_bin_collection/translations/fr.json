@@ -1,0 +1,31 @@
+{
+    "title": "Collecte des Poubelles du Conseil ABC",
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "user_address": "Adresse"
+                },
+                "description": "Entrez l'URL complète ou seulement la valeur de l'adresse depuis le [site Web du Conseil ABC](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)."
+            }
+        },
+        "error": {
+            "invalid_address": "L'adresse fournie n'est pas valide. Veuillez entrer une URL/valeur d'adresse valide."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "update_interval": "Intervalle de Mise à Jour (en heures)",
+                    "create_calendar_events": "Créer des Événements de Calendrier",
+                    "calendar_entity": "Entité de Calendrier",
+                    "summary_domestic": "Résumé des Collectes Domestiques",
+                    "summary_recycling": "Résumé des Collectes de Recyclage",
+                    "summary_garden_food": "Résumé des Collectes de Jardin et Alimentaires"
+                },
+                "description": "Configurez les options supplémentaires relatives à l'intervalle de récupération des données et à la création d'événements de calendrier."
+            }
+        }
+    }
+}
