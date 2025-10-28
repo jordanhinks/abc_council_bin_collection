@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL
 from .coordinator import BinCollectionDataUpdateCoordinator
@@ -9,6 +10,7 @@ from homeassistant.core import HomeAssistant
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor", "button"]
+
 
 def _extract_options(entry: ConfigEntry) -> tuple[str, timedelta, dict]:
     """Extract and validate options from the config entry"""
@@ -23,6 +25,7 @@ def _extract_options(entry: ConfigEntry) -> tuple[str, timedelta, dict]:
     }
 
     return address, update_interval, event_summaries
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the ABC Council Bin Collection integration from a config entry"""
@@ -55,12 +58,63 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.exception("Error setting up coordinator: %s", err)
         return False
 
+    # Listen for options updates so toggling options in the UI takes effect immediately
+    async def _options_updated(hass: HomeAssistant, updated_entry: ConfigEntry) -> None:
+        _LOGGER.info("Options updated for entry %s: %s", updated_entry.entry_id, updated_entry.options)
+        new_create = updated_entry.options.get("create_calendar_events", False)
+        new_calendar = updated_entry.options.get("calendar_entity", "").strip()
+
+        # Build updated event_summaries from the latest options
+        new_event_summaries = {
+            "Domestic Collections": updated_entry.options.get("summary_domestic", "Domestic Collections"),
+            "Recycling Collections": updated_entry.options.get("summary_recycling", "Recycling Collections"),
+            "Garden/Food Collections": updated_entry.options.get("summary_garden_food", "Garden/Food Collections"),
+        }
+
+        # Update coordinator in-place to avoid reloads
+        try:
+            # Update flags
+            coordinator.create_calendar_events = new_create
+            coordinator.calendar_entity = new_calendar
+
+            # Update event summaries used for calendar event titles
+            coordinator.event_summaries = new_event_summaries
+
+            # Refresh coordinator data to ensure new summaries apply to any immediately scheduled tasks
+            try:
+                coordinator.data = await coordinator._async_update_data()
+            except Exception as ex:
+                _LOGGER.debug("Failed to refresh coordinator data after options update: %s", ex)
+
+            # If enabling calendar creation now, schedule the background task if not present
+            if new_create and not getattr(coordinator, "_events_task", None):
+                _LOGGER.info("Enabling calendar event creation for entry %s", updated_entry.entry_id)
+                # Schedule the background task using hass.async_create_task
+                try:
+                    coordinator._events_task = hass.async_create_task(coordinator._run_create_events_task(coordinator.data))
+                except Exception:
+                    coordinator._events_task = asyncio.create_task(coordinator._run_create_events_task(coordinator.data))
+
+            # If disabling calendar creation, cancel any running background task
+            if not new_create and getattr(coordinator, "_events_task", None):
+                _LOGGER.info("Disabling calendar event creation for entry %s; cancelling background task", updated_entry.entry_id)
+                try:
+                    await coordinator.async_stop()
+                except Exception as ex:
+                    _LOGGER.debug("Error stopping coordinator after options change: %s", ex)
+        except Exception as ex:
+            _LOGGER.exception("Failed to apply updated options to coordinator: %s", ex)
+
+    # Register the listener so UI option toggles are handled
+    entry.add_update_listener(_options_updated)
+
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     _LOGGER.info("ABC Council Bin Collection integration setup successfully: %s", entry.entry_id)
     
     return True
+
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry"""
@@ -75,6 +129,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.warning("ABC Council Bin Collection failed to unload: %s", entry.entry_id)
 
     return unload_ok
+
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Remove a config entry and clear stored persistent data"""
