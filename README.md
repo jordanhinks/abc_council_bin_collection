@@ -36,6 +36,12 @@ When the integration is added, the **Configure** button offer additional options
 -   Calendar Entity - Lets you specify the name of the calendar entity either as "calendar.my_calendar", or "my_calendar", you will find the calendar name in your Home Assistant instance.
 -   Domestic Collections Summary, Recycling Collections Summary, and Garden & Food Collections Summary - allows you to choose the preferred calendar event name for each such as if you prefer the bin color.
 
+### Notification automation
+
+If you wish to be notified a day before as a reminder then please use the code found in **automation.yaml** file which serves as a baseline on how to set it up. In my example it triggers at 20:00 the day before by showing a Home Assistant app notification specifying which bin needs to be placed out.
+
+This doesn't require the calendar feature to be enabled.
+
 ### Entities
 
 For further control if you wish to use the dates; an entity has been created for each collection type with the state being the next collection date, then the subsequent dates being placed within the state attributes under **all_dates**.

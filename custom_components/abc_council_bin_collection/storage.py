@@ -40,7 +40,11 @@ class BinCollectionStorage:
                 _LOGGER.warning("Invalid storage format detected, resetting data.")
                 stored_data = {}
 
-            self.data = stored_data
+            # If the stored format nests events under an "events" key, use it
+            if "events" in stored_data and isinstance(stored_data["events"], dict):
+                self.data = stored_data["events"].copy()
+            else:
+                self.data = stored_data.copy() if isinstance(stored_data, dict) else {}
 
             # Calculate the cutoff date. Events older than this will be removed
             cutoff_date = (datetime.today() - timedelta(days=EVENT_CLEANUP_THRESHOLD_DAYS)).strftime("%Y-%m-%d")
@@ -54,13 +58,17 @@ class BinCollectionStorage:
         else:
             _LOGGER.debug("No stored bin collection events found.")
 
+        # Always return a copy of the internal mapping for callers
+        return {k: list(v) for k, v in self.data.items()}
+
     async def save_data(self) -> None:
         """
         Uses Home Assistant's storage helper to save the current state of self.data.
         """
 
         _LOGGER.debug("Saving bin collection data to storage: %s", self.data)
-        await self.store.async_save(self.data)
+        # Save under an "events" key to preserve potential previous schema
+        await self.store.async_save({"events": self.data})
 
     def is_event_stored(self, date: str, summary: str) -> bool:
         """
@@ -77,6 +85,16 @@ class BinCollectionStorage:
         stored_events: Any = self.data.get(date, [])
 
         return isinstance(stored_events, list) and summary in stored_events
+
+    async def update_events(self, events: Dict[str, List[str]]) -> None:
+        """
+        Replace in-memory events with provided mapping and persist.
+        """
+        # Ensure we store copies
+        self.data = {k: list(v) for k, v in events.items()}
+        # Clean up and persist
+        # Reuse save_data which will wrap under 'events' key
+        await self.save_data()
 
     async def store_event(self, date: str, summary: str) -> None:
         """
