@@ -27,8 +27,6 @@ BIN_TYPES: Dict[str, str] = {
     "bg-brown": "Garden/Food Collections",
 }
 
-# Require Python 3.11+; use stdlib asyncio.timeout for timeouts (no external dependency)
-
 class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
     
     BIN_COLLECTION_BLOCK_PATTERN = re.compile(
@@ -60,8 +58,24 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         event_summaries: Dict[str, str],
     ) -> None:
         """
-        Initialise the coordinator
+        Initialize the Bin Collection Data coordinator.
+
+        Parameters
+        ----------
+        hass : HomeAssistant
+            The Home Assistant instance.
+        address : str
+            The address used to look up the bin collection schedule.
+        update_interval : timedelta
+            The frequency at which to update the bin collection data.
+        create_calendar_events : bool
+            Flag to enable or disable the creation of calendar events.
+        calendar_entity : str
+            The entity ID of the calendar to use for events.
+        event_summaries : Dict[str, str]
+            A dictionary mapping bin types to their corresponding calendar event summaries.
         """
+
         self.hass = hass
         self.address = address
         self.url = f"https://www.armaghbanbridgecraigavon.gov.uk/resident/binday-result/?address={self.address}"
@@ -79,8 +93,16 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> Dict[str, List[str]]:
         """
-        Fetch HTML data from the remote URL, process and parse bin collection dates,
-        and create calendar events (if enabled)
+        Asynchronously fetches and processes bin collection data from a remote URL.
+
+        The function attempts to retrieve the HTML data up to 3 times. It then parses 
+        the collection dates and creates calendar events if that feature is enabled.
+
+        Returns
+        -------
+        Dict[str, List[str]]
+            A dictionary containing the parsed bin collection data. Returns an empty 
+            dictionary ({}) if the data fetch fails after all retries.
         """
 
         await self.load_stored_events()
@@ -121,13 +143,19 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
 
     def _parse_html(self, html: str) -> Dict[str, List[str]]:
         """
-        Parse the HTML content to extract bin collection dates using a two-stage RegEx process.
+        Parses the raw HTML content to extract and format bin collection dates.
+
+        The process uses two regular expressions: the first extracts HTML blocks for 
+        each bin type, and the second extracts the date strings within those blocks. 
+        Dates are validated, converted from DD/MM/YYYY to ISO 8601 (YYYY-MM-DD), and 
+        stored. Ensures all known bin types are present in the final result.
 
         Args:
-            html: The HTML content as a string.
+            html: The raw HTML content string retrieved from the source URL.
 
         Returns:
-            A dictionary with keys as bin collection types and values as lists of dates (in ISO format).
+            A dictionary where keys are bin type titles (str) and values are lists of 
+            formatted collection dates (List[str] in ISO format).
         """
 
         result: Dict[str, List[str]] = {}
@@ -171,16 +199,40 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         return result
 
     async def load_stored_events(self) -> None:
-        """Load persistent bin collection events into memory"""
+        """
+        Asynchronously loads persistent calendar events from storage into the coordinator's memory.
+
+        A debug log is created showing the data retrieved from storage.
+
+        Returns
+        -------
+        None
+            The method does not return a value but updates the coordinator's state.
+        """
+
         loaded = await self.storage.load_data()
         # loaded is a copy of stored events
         _LOGGER.debug("Loaded stored events: %s", loaded)
 
     async def _run_create_events_task(self, data: Dict[str, List[str]]) -> None:
         """
-        Background runner that delays then creates calendar events.
-        Keeps `self._events_task` populated while running and clears it on exit.
+        Manages the background task for delayed calendar event creation.
+
+        This method first introduces a delay, then calls the event creation logic. 
+        It handles cancellation and general exceptions gracefully. Importantly, it
+        manages the `self._events_task` handle, clearing it upon completion or failure 
+        to indicate the task is finished.
+
+        Parameters
+        ----------
+        data : Dict[str, List[str]]
+            The parsed bin collection data used to generate the calendar events.
+
+        Returns
+        -------
+        None
         """
+
         try:
             await asyncio.sleep(EVENT_CREATION_DELAY)
             await self._create_calendar_events(data)
@@ -198,7 +250,22 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _create_calendar_events(self, data: Dict[str, List[str]]) -> None:
         """
-        Create calendar events based on parsed data. Only creates events if they are not persistently stored.
+        Creates single-day calendar events for each collection date found in the parsed data.
+
+        Events are only created if they do not already exist in persistent storage. 
+        It uses user-defined summaries (if provided), calls the Home Assistant 
+        'calendar.create_event' service, stores the new event persistently, and applies 
+        a short timeout between creations. Non-date placeholders are skipped.
+
+        Parameters
+        ----------
+        data : Dict[str, List[str]]
+            A dictionary containing bin types as keys and a list of ISO-formatted 
+            collection dates as values.
+
+        Returns
+        -------
+        None
         """
 
         for bin_type, dates in data.items():
@@ -245,9 +312,18 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def async_stop(self) -> None:
         """
-        Stop the coordinator and cancel any background event creation task.
+        Asynchronously halts the coordinator, ensuring a clean shutdown.
+
+        This method checks for and cancels any currently running background calendar 
+        event creation task (`_events_task`). It handles the cancellation and awaiting 
+        of the task to prevent resource leaks before clearing the task handle. Finally, 
+        it safely calls the base class's `async_stop` method if one exists.
+
+        Returns
+        -------
+        None
         """
-        # Cancel background events task if running
+        
         if getattr(self, "_events_task", None):
             try:
                 self._events_task.cancel()

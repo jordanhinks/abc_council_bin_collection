@@ -1,7 +1,8 @@
 """
-Button platform for ABC Council Bin Collection integration.
+Button platform for the ABC Council Bin Collection integration.
 
-Provides a button enttity that when pressed clears persistent bin collection events.
+This module provides the 'Clear Bin Events' button entity, which, when 
+activated, clears all persistent bin collection events stored by the integration.
 """
 
 import logging
@@ -16,7 +17,22 @@ from homeassistant.config_entries import ConfigEntry
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    """Set up the Clear Bin Events button entity."""
+    """
+    Sets up the Clear Bin Events button entity from a configuration entry.
+
+    The function retrieves the coordinator from Home Assistant data, and uses its 
+    storage, entry ID, and address to initialize and register the button entity.
+
+    Parameters
+    ----------
+    hass : HomeAssistant
+        The Home Assistant core object.
+    entry : ConfigEntry
+        The configuration entry object for the integration.
+    async_add_entities : AddEntitiesCallback
+        Callback function to add new entities to Home Assistant.
+    """
+
     _LOGGER.debug("Setting up Clear Bin Events button entity...")
 
     coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
@@ -28,10 +44,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     _LOGGER.debug("Clear Bin Events button entity successfully registered.")
 
 class ClearBinEventsButton(ButtonEntity):
-    """Clear events button entity"""
+    """
+    Represents a button entity used to clear all persistently stored 
+    bin collection events for this integration instance.
+    """
 
     def __init__(self, storage: BinCollectionStorage, entry_id: str, address: str) -> None:
-        """Initialize the button entity"""
+        """
+        Initializes the Clear Bin Events button entity.
+
+        Parameters
+        ----------
+        storage : BinCollectionStorage
+            The storage object used to clear the persistent event data.
+        entry_id : str
+            The unique ID of the configuration entry for device identification.
+        address : str
+            The address string used for generating the device identifier.
+        """
 
         self._storage = storage
         self._entry_id = entry_id
@@ -50,7 +80,13 @@ class ClearBinEventsButton(ButtonEntity):
         }
 
     async def async_press(self) -> None:
-        """Action to occur upon button trigger"""
+        """
+        Performs the action of clearing all stored bin collection events 
+        when the button is pressed.
+
+        Calls the `clear_data` method on the storage object and logs the 
+        success or any exception encountered.
+        """
 
         try:
             _LOGGER.info("Clearing all stored bin collection events...")

@@ -18,7 +18,21 @@ from homeassistant.util import slugify
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: Any) -> None:
-    """Setup sensor entities platform"""
+    """
+    Sets up the sensor entities platform for the Bin Collection integration.
+
+    Retrieves the shared DataUpdateCoordinator, and creates a `BinCollectionSensor`
+    entity for each default bin type defined in `DEFAULT_SENSOR_NAMES`.
+
+    Parameters
+    ----------
+    hass : HomeAssistant
+        The Home Assistant core object.
+    config_entry : ConfigEntry
+        The configuration entry object for the integration.
+    async_add_entities : AddEntitiesCallback
+        Callback function to add new entities to Home Assistant.
+    """
 
     coordinator: BinCollectionDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
     sensors: List[BinCollectionSensor] = []
@@ -31,15 +45,27 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     _LOGGER.debug("Sensors for ABC Council Bin Collection successfully registered")
 
 class BinCollectionSensor(SensorEntity):
-    """Sensor representing the bin collection dates for each bin type"""
+    """
+    Represents a sensor entity that reports the next collection date 
+    for a specific bin type (e.g., 'Recycling').
+
+    The sensor state uses the `TIMESTAMP` device class, reporting the next 
+    scheduled collection date.
+    """
 
     def __init__(self, coordinator: BinCollectionDataUpdateCoordinator, sensor_name: str) -> None:
         """
-        Initialise the sensor
+        Initializes the Bin Collection Sensor entity.
 
-        Args:
-            coordinator (BinCollectionDataUpdateCoordinator): Coordinator instance.
-            sensor_name (str): The name of the sensor (bin type).
+        The unique ID and display name are generated based on the coordinator's address 
+        and the provided sensor name (bin type).
+
+        Parameters
+        ----------
+        coordinator : BinCollectionDataUpdateCoordinator
+            The coordinator instance managing data fetching and updates.
+        sensor_name : str
+            The internal name used to look up the bin type in the coordinator's data.
         """
 
         self.coordinator = coordinator
@@ -53,17 +79,29 @@ class BinCollectionSensor(SensorEntity):
         self._attr_state = "unknown"
 
     async def async_added_to_hass(self) -> None:
-        """Register for coordinator updates"""
+        """
+        Registers the entity for updates when it is added to Home Assistant.
+
+        Registers a listener that calls `async_write_ha_state` whenever the 
+        coordinator successfully updates its data, ensuring the sensor reflects 
+        the latest collection date.
+
+        Returns
+        -------
+        None
+        """
 
         self.async_on_remove(self.coordinator.async_add_listener(self.async_write_ha_state))
 
     @property
     def state(self) -> str:
         """
-        Return sensor state
+        Returns the primary state of the sensor.
 
-        Retrieves the next bin collection date for this sensor type.
-        If no date is available, returns a default message.
+        The state is the **next scheduled collection date** (the first item)
+        found for this sensor's bin type in the coordinator's data. If no 
+        date is available, it returns "No collection scheduled" or 
+        "unavailable" if the coordinator data is missing.
         """
 
         if not self.coordinator.data:
@@ -76,9 +114,10 @@ class BinCollectionSensor(SensorEntity):
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """
-        Return additional attributes including all collection dates
+        Returns additional attributes for the sensor.
 
-        These attributes can be used to display historical data or debugging info.
+        Includes the full list of all parsed collection dates for this bin type 
+        under the key 'all_dates'.
         """
 
         return {"all_dates": self.coordinator.data.get(self._sensor_name, [])}
@@ -86,9 +125,8 @@ class BinCollectionSensor(SensorEntity):
     @property
     def device_info(self) -> Optional[Dict[str, Any]]:
         """
-        Return device info for the sensor for grouping in the device registry
-
-        This helps Home Assistant to know that this sensor is part of the bin collection integration.
+        Returns device information to link this sensor entity to the primary 
+        integration device in Home Assistant's device registry.
         """
         
         return {

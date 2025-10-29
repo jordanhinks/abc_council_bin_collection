@@ -1,8 +1,9 @@
 """
-Persistent storage module for the ABC Council Bin Collection integration.
+Manages the persistent storage of created calendar events for the 
+Bin Collection integration using Home Assistant's storage helper.
 
-Defines BinCollectionStorage class for storing the data persistently across
-load, save and manage states.
+Events are stored as a mapping from date strings to a list of event summaries 
+for that specific date.
 """
 
 import logging
@@ -17,18 +18,37 @@ _LOGGER = logging.getLogger(__name__)
 
 class BinCollectionStorage:
     def __init__(self, hass: HomeAssistant) -> None:
+        """
+        Initializes the storage manager.
+
+        Sets up the Home Assistant storage object with version 1 and the key 
+        "bin_collection_events", and initializes the internal data cache.
+
+        Parameters
+        ----------
+        hass : HomeAssistant
+            The Home Assistant core object instance.
+        """
+
         self.store = storage.Store(hass, 1, "bin_collection_events")
         
         # Storing events as a mapping from date strings to a list of event summaries
         self.data: Dict[str, List[str]] = {}
 
-    async def load_data(self) -> None:
+    # async def load_data(self) -> None:
+    async def load_data(self) -> Dict[str, List[str]]:
         """
-        Load stored event dates and clean out outdated entries
+        Asynchronously loads stored event data from disk, performs schema migration, 
+        and cleans up outdated entries.
 
-        Retrieves stored data from Home Assistant's storage and ensures that the data is 
-        a valid dictionary. It then calculates a cutoff date based on EVENT_CLEANUP_THRESHOLD_DAYS,
-        filtering out any events prior to that date and re-saving the cleaned data.
+        Data is loaded, and any event date older than 
+        `EVENT_CLEANUP_THRESHOLD_DAYS` is pruned before the cleaned data is 
+        re-saved and returned.
+
+        Returns
+        -------
+        Dict[str, List[str]]
+            A copy of the dictionary containing the stored events (date -> list of summaries).
         """
 
         stored_data: Any = await self.store.async_load()
@@ -63,7 +83,14 @@ class BinCollectionStorage:
 
     async def save_data(self) -> None:
         """
-        Uses Home Assistant's storage helper to save the current state of self.data.
+        Asynchronously persists the current in-memory event data (`self.data`) 
+        to Home Assistant's permanent storage.
+
+        The data is saved wrapped under the "events" key.
+
+        Returns
+        -------
+        None
         """
 
         _LOGGER.debug("Saving bin collection data to storage: %s", self.data)
@@ -72,14 +99,20 @@ class BinCollectionStorage:
 
     def is_event_stored(self, date: str, summary: str) -> bool:
         """
-        Determine whether a specific event is already stored
-        
-        Args:
-            date (str): The date of the event.
-            summary (str): A brief description of the event (e.g., bin type).
+        Determines if a specific event (date and summary combination) is 
+        already present in the in-memory cache.
 
-        Returns:
-            bool: True if the event is already in storage, False otherwise.
+        Parameters
+        ----------
+        date : str
+            The date string of the event (YYYY-MM-DD).
+        summary : str
+            The event summary, usually representing the bin type.
+
+        Returns
+        -------
+        bool
+            True if the event is stored, False otherwise.
         """
 
         stored_events: Any = self.data.get(date, [])
@@ -88,8 +121,19 @@ class BinCollectionStorage:
 
     async def update_events(self, events: Dict[str, List[str]]) -> None:
         """
-        Replace in-memory events with provided mapping and persist.
+        Replaces the entire in-memory events cache with the provided mapping 
+        and immediately saves the new state to persistent storage.
+
+        Parameters
+        ----------
+        events : Dict[str, List[str]]
+            The complete, new set of bin collection events to store.
+
+        Returns
+        -------
+        None
         """
+        
         # Ensure we store copies
         self.data = {k: list(v) for k, v in events.items()}
         # Clean up and persist
@@ -98,14 +142,22 @@ class BinCollectionStorage:
 
     async def store_event(self, date: str, summary: str) -> None:
         """
-        Persist a new event into storage
+        Asynchronously records a new, unique event entry (date/summary pair) 
+        into the in-memory cache and persists the updated cache to disk.
 
-        Args:
-            date (str): The date of the event.
-            summary (str): A description of the bin type or event summary.
+        If a list of events does not exist for the given date, one is created. 
+        Duplicate summaries for the same date are prevented.
 
-        If no list exists for a given date, one is created. The summary is then appended
-        only if it is not already present.
+        Parameters
+        ----------
+        date : str
+            The date string for the collection event (YYYY-MM-DD).
+        summary : str
+            The unique summary/bin type to record for that date.
+
+        Returns
+        -------
+        None
         """
 
         _LOGGER.debug("Adding event to storage: %s -> %s", date, summary)
@@ -121,7 +173,14 @@ class BinCollectionStorage:
         _LOGGER.debug("Stored bin collection data after saving: %s", self.data)
 
     async def clear_data(self) -> None:
-        """Clear all stored bin collection events"""
+        """
+        Clears all stored bin collection event data from both the in-memory 
+        cache and persistent storage.
+
+        Returns
+        -------
+        None
+        """
         
         if not self.data:
             _LOGGER.debug("Attempted to clear bin events, but no data was found!")
