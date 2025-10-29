@@ -17,7 +17,7 @@ DEVICE_INTEGRATION: str = "Home Assistant"
 # Update Interval Constants (in hours)
 
 # Number of hours between automatic data updates.
-DEFAULT_UPDATE_INTERVAL: int = 96  # hours
+DEFAULT_UPDATE_INTERVAL: int = 120  # hours
 
 # Minimum allowed number of hours for an update interval to prevent excessive updates
 MIN_UPDATE_INTERVAL: int = 6  # hours
