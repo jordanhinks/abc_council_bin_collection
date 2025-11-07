@@ -6,7 +6,7 @@
                 "data": {
                     "user_address": "Address"
                 },
-                "description": "Enter complete URL or just address value."
+                "description": "Enter complete URL or just address value from [ABC Council website](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)."
             }
         },
         "error": {

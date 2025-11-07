@@ -1,0 +1,31 @@
+{
+    "title": "Zbiórka Pojemników na Odpady Rady ABC",
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "user_address": "Adres"
+                },
+                "description": "Wprowadź pełny adres URL lub tylko wartość adresu ze [strony internetowej Rady ABC](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)."
+            }
+        },
+        "error": {
+            "invalid_address": "Podany adres jest nieprawidłowy. Proszę wprowadzić prawidłowy adres URL/wartość adresu."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "update_interval": "Interwał Aktualizacji (w godzinach)",
+                    "create_calendar_events": "Utwórz Wydarzenia w Kalendarzu",
+                    "calendar_entity": "Jednostka Kalendarza",
+                    "summary_domestic": "Podsumowanie Odbioru Odpadów Domowych",
+                    "summary_recycling": "Podsumowanie Odbioru Odpadów Recyklingowych",
+                    "summary_garden_food": "Podsumowanie Odbioru Odpadów Ogrodowych i Spożywczych"
+                },
+                "description": "Skonfiguruj dodatkowe opcje dotyczące interwału pobierania danych i tworzenia wydarzeń w kalendarzu."
+            }
+        }
+    }
+}
