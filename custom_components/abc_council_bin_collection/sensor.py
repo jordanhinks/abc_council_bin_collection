@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
     async_add_entities(sensors, update_before_add=True)
     _LOGGER.debug("Sensors for ABC Council Bin Collection successfully registered")
 
-class BinCollectionSensor(SensorEntity):
+class BinCollectionSensor(CoordinatorEntity, SensorEntity):
     """
     Represents a sensor entity that reports the next collection date 
     for a specific bin type (e.g., 'Recycling').
@@ -67,8 +68,7 @@ class BinCollectionSensor(SensorEntity):
         sensor_name : str
             The internal name used to look up the bin type in the coordinator's data.
         """
-
-        self.coordinator = coordinator
+        super().__init__(coordinator)
         self._sensor_name = sensor_name
 
         # Normalize the sensor name so that it is user friendly.
@@ -76,22 +76,6 @@ class BinCollectionSensor(SensorEntity):
         self._attr_name = normalized_name
         self._attr_unique_id = f"{coordinator.address}_{slugify(normalized_name)}"
         self._attr_device_class = SensorDeviceClass.DATE
-        self._attr_state = "unknown"
-
-    async def async_added_to_hass(self) -> None:
-        """
-        Registers the entity for updates when it is added to Home Assistant.
-
-        Registers a listener that calls `async_write_ha_state` whenever the 
-        coordinator successfully updates its data, ensuring the sensor reflects 
-        the latest collection date.
-
-        Returns
-        -------
-        None
-        """
-
-        self.async_on_remove(self.coordinator.async_add_listener(self.async_write_ha_state))
 
     @property
     def state(self) -> Optional[str]:

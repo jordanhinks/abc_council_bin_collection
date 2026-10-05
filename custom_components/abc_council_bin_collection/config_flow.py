@@ -1,56 +1,69 @@
 """
 Config flow for the ABC Council Bin Collection integration.
 
-Handles user input for setting up integration, including sanitation 
+Handles user input for setting up integration, including sanitation
 and validation of the address.
 
-Provides option flow for changing data interval along with toggling 
+Provides option flow for changing data interval along with toggling
 calendar event creation.
 """
 
 import logging
 import voluptuous as vol
+import asyncio
+import aiohttp
 
 from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL, MIN_UPDATE_INTERVAL
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse, parse_qs
 from homeassistant import config_entries
 from homeassistant.core import callback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    
+
     VERSION = 1
 
     async def async_step_user(
         self, user_input: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        
 
         errors: Dict[str, str] = {}
 
         if user_input is not None:
             address_input = user_input.get("user_address", "")
             sanitized_address = self._sanitize_address(address_input)
-            
+
             # Validate the sanitized address: must be non-empty and numeric.
             if not sanitized_address or not sanitized_address.isdigit():
                 errors["base"] = "invalid_address"
                 _LOGGER.error("Invalid address input: %s", address_input)
             else:
-                _LOGGER.debug("Creating entry with sanitized address: %s", sanitized_address)
-                return self.async_create_entry(
-                    title="ABC Council Bin Collection",
-                    data={"address": sanitized_address},
-                    options={}  # Ensure options are initialized.
-                )
+                # Validate connection to the API before creating entry
+                try:
+                    url = f"https://www.armaghbanbridgecraigavon.gov.uk/resident/binday-result/?address={sanitized_address}"
+                    session = async_get_clientsession(self.hass)
+                    async with asyncio.timeout(10.0):
+                        response = await session.get(url)
+                        response.raise_for_status()
+                except Exception as ex:
+                    _LOGGER.error("Cannot connect to API for validation: %s", ex)
+                    errors["base"] = "cannot_connect"
+                else:
+                    _LOGGER.debug("Creating entry with sanitized address: %s", sanitized_address)
+                    return self.async_create_entry(
+                        title="ABC Council Bin Collection",
+                        data={"address": sanitized_address},
+                        options={}  # Ensure options are initialized.
+                    )
 
         data_schema = vol.Schema({vol.Required("user_address"): str})
         return self.async_show_form(
-            step_id="user", 
-            data_schema=data_schema, 
+            step_id="user",
+            data_schema=data_schema,
             errors=errors,
             description_placeholders={"url": "https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/"}
         )

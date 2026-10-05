@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from homeassistant.config_entries import ConfigEntry
 
@@ -131,7 +131,7 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
             except Exception as err:
                 _LOGGER.error("Error fetching data (attempt %d): %s", attempt + 1, err)
                 if attempt == 2:
-                    return {}
+                    raise UpdateFailed(f"Error communicating with API: {err}") from err
 
         data = await self.hass.async_add_executor_job(self._parse_html, html)
 

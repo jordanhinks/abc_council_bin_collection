@@ -91,5 +91,6 @@ async def test_retry_exhausts(monkeypatch):
         lambda hass: AlwaysFailSession()
     )
 
-    result = await coord._async_update_data()
-    assert result == {}
+    from homeassistant.helpers.update_coordinator import UpdateFailed
+    with pytest.raises(UpdateFailed):
+        await coord._async_update_data()
