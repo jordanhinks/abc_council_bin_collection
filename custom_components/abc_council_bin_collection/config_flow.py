@@ -49,7 +49,10 @@ class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = vol.Schema({vol.Required("user_address"): str})
         return self.async_show_form(
-            step_id="user", data_schema=data_schema, errors=errors
+            step_id="user", 
+            data_schema=data_schema, 
+            errors=errors,
+            description_placeholders={"url": "https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/"}
         )
 
     def _sanitize_address(self, address_input: str) -> str:
