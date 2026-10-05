@@ -59,9 +59,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    
     _LOGGER.info("ABC Council Bin Collection integration setup successfully: %s", entry.entry_id)
     
     return True
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Update listener, called when the config entry options are changed."""
+    
+    coordinator = hass.data[DOMAIN].get(entry.entry_id)
+    if not coordinator:
+        return
+
+    _, update_interval, event_summaries = _extract_options(entry)
+    
+    # Update coordinator attributes dynamically
+    coordinator.update_interval = update_interval
+    coordinator.create_calendar_events = entry.options.get("create_calendar_events", False)
+    coordinator.calendar_entity = entry.options.get("calendar_entity", "").strip()
+    coordinator.event_summaries = event_summaries
+
+    _LOGGER.info("Options updated dynamically for %s without full reload.", entry.entry_id)
+    
+    # Force the coordinator to run an immediate update so the new options (like calendar creation) take effect right away
+    await coordinator.async_request_refresh()
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry"""

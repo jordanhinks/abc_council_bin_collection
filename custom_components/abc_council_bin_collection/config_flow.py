@@ -107,11 +107,7 @@ class BinCollectionOptionsFlowHandler(config_entries.OptionsFlow):
                 user_input["calendar_entity"] = value
 
             _LOGGER.debug("User options received: %s", user_input)
-            result = self.async_create_entry(title="", data=user_input)
-
-            # Reload the integration on any options update to apply changes.
-            await self.hass.config_entries.async_reload(self._config_entry.entry_id)
-            return result
+            return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(
             step_id="init", data_schema=self._get_options_schema()
