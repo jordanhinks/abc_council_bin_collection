@@ -18,6 +18,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
+from homeassistant.config_entries import ConfigEntry
+
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
 # Define types for clarity.
@@ -56,6 +58,8 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         create_calendar_events: bool,
         calendar_entity: str,
         event_summaries: Dict[str, str],
+        config_entry: ConfigEntry | None = None,
+        **kwargs: Any,
     ) -> None:
         """
         Initialize the Bin Collection Data coordinator.
@@ -74,6 +78,8 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
             The entity ID of the calendar to use for events.
         event_summaries : Dict[str, str]
             A dictionary mapping bin types to their corresponding calendar event summaries.
+        config_entry : ConfigEntry | None
+            The configuration entry for this integration.
         """
 
         self.hass = hass
@@ -89,7 +95,12 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         # Background task handle for calendar event creation
         self._events_task: asyncio.Task | None = None
 
-        super().__init__(hass, _LOGGER, name="Bin Collection Data", update_interval=update_interval)
+        # Determine kwargs for DataUpdateCoordinator to support Home Assistant quality scale
+        super_kwargs = {"name": "Bin Collection Data", "update_interval": update_interval}
+        if config_entry:
+            super_kwargs["config_entry"] = config_entry
+
+        super().__init__(hass, _LOGGER, **super_kwargs)
 
     async def _async_update_data(self) -> Dict[str, List[str]]:
         """
