@@ -6,7 +6,7 @@
                 "data": {
                     "user_address": "Dirección"
                 },
-                "description": "Ingrese la URL completa o solo el valor de la dirección desde el [sitio web del Consejo ABC](https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/)."
+                "description": "Ingrese la URL completa o solo el valor de la dirección desde el [sitio web del Consejo ABC]({url})."
             }
         },
         "error": {

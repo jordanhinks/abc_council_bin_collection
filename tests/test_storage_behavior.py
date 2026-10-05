@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from custom_components.abc_council_bin_collection.storage import BinCollectionStorage
 
@@ -21,14 +22,15 @@ async def test_store_event_idempotent():
     fake = FakeStore()
     storage.store = fake
 
-    date = "2025-12-01"
-    await storage.store_event(date, "Domestic Collections")
-    await storage.store_event(date, "Domestic Collections")
+    # Use a future date so it doesn't get cleaned up by load_data()
+    future_date = (datetime.now(timezone.utc) + timedelta(days=10)).date().isoformat()
+    await storage.store_event(future_date, "Domestic Collections")
+    await storage.store_event(future_date, "Domestic Collections")
 
     # ensure only one entry persisted
     await storage.load_data()
-    assert date in storage.data
-    assert storage.data[date].count("Domestic Collections") == 1
+    assert future_date in storage.data
+    assert storage.data[future_date].count("Domestic Collections") == 1
 
 
 @pytest.mark.asyncio
@@ -38,7 +40,8 @@ async def test_clear_data():
     fake = FakeStore()
     storage.store = fake
 
-    await storage.store_event("2025-12-01", "Domestic Collections")
+    future_date = (datetime.now(timezone.utc) + timedelta(days=10)).date().isoformat()
+    await storage.store_event(future_date, "Domestic Collections")
     await storage.clear_data()
     await storage.load_data()
     assert storage.data == {}

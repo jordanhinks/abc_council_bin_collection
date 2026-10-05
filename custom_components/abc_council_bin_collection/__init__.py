@@ -48,6 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             create_calendar_events=entry.options.get("create_calendar_events", False),
             calendar_entity=entry.options.get("calendar_entity", "").strip(),
             event_summaries=event_summaries,
+            config_entry=entry,
         )
         await coordinator.load_stored_events()
         coordinator.data = await coordinator._async_update_data()
