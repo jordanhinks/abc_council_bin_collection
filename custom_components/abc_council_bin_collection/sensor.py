@@ -75,7 +75,7 @@ class BinCollectionSensor(SensorEntity):
         normalized_name = sensor_name if sensor_name.endswith(" Collections") else f"{sensor_name} Collection"
         self._attr_name = normalized_name
         self._attr_unique_id = f"{coordinator.address}_{slugify(normalized_name)}"
-        self._attr_device_class = SensorDeviceClass.TIMESTAMP
+        self._attr_device_class = SensorDeviceClass.DATE
         self._attr_state = "unknown"
 
     async def async_added_to_hass(self) -> None:
@@ -94,22 +94,23 @@ class BinCollectionSensor(SensorEntity):
         self.async_on_remove(self.coordinator.async_add_listener(self.async_write_ha_state))
 
     @property
-    def state(self) -> str:
+    def state(self) -> Optional[str]:
         """
         Returns the primary state of the sensor.
 
         The state is the **next scheduled collection date** (the first item)
         found for this sensor's bin type in the coordinator's data. If no 
-        date is available, it returns "No collection scheduled" or 
-        "unavailable" if the coordinator data is missing.
+        date is available, it returns None.
         """
 
         if not self.coordinator.data:
             _LOGGER.warning(
                 "Sensor %s could not retrieve data – coordinator data is missing or not updated.", self._sensor_name)
-            return "unavailable" #translation
+            return None
         dates: List[str] = self.coordinator.data.get(self._sensor_name, [])
-        return dates[0] if dates else "No collection scheduled" #translation
+        if not dates or dates[0] == "No collection scheduled":
+            return None
+        return dates[0]
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:

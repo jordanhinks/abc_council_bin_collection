@@ -44,7 +44,7 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
     # Pre-compile the simpler pattern for finding dates within the captured block (Group 2).
     # Group 1: The date (DD/MM/YYYY)
     DATE_EXTRACT_PATTERN = re.compile(
-        r'<h4><i class="fa fa-calendar".*?></i>\s*(\d{2}/\d{2}/\d{4})\s*</h4>',
+        r'<h4><i class="fa fa-calendar".*?></i>.*?(\d{2}/\d{2}/\d{4})\s*</h4>',
         re.DOTALL
     )
 
