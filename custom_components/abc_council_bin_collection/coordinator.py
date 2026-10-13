@@ -10,6 +10,7 @@ import logging
 import asyncio
 import re
 
+from dateutil.parser import parse, ParserError
 from .const import EVENT_CREATION_DELAY, EVENT_CREATION_TIMEOUT
 from .storage import BinCollectionStorage
 from datetime import datetime, timedelta
@@ -44,9 +45,9 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
     )
     
     # Pre-compile the simpler pattern for finding dates within the captured block (Group 2).
-    # Group 1: The date (DD/MM/YYYY)
+    # Group 1: The extracted date string (may contain HTML/spaces)
     DATE_EXTRACT_PATTERN = re.compile(
-        r'<h4><i class="fa fa-calendar".*?></i>.*?(\d{2}/\d{2}/\d{4})\s*</h4>',
+        r'<h4><i class="fa fa-calendar".*?></i>(.*?)</h4>',
         re.DOTALL
     )
 
@@ -184,15 +185,25 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
             dates_list: List[str] = []
             
             for date_match in self.DATE_EXTRACT_PATTERN.finditer(collection_block_html):
-                date_text = date_match.group(1).strip()
+                # Clean up any extra whitespace or newlines in the extracted string
+                date_text = re.sub(r'\s+', ' ', date_match.group(1)).strip()
                 
                 try:
-                    date_obj = datetime.strptime(date_text, "%d/%m/%Y")
+                    now = datetime.now()
+                    # Parse using fuzzy matching. Uses current datetime to fill missing fields (like year)
+                    parsed_date = parse(date_text, fuzzy=True, default=now)
+                    
+                    # Handle year wrapping logic if the year was omitted and defaulted to the current year
+                    if parsed_date.year == now.year:
+                        if parsed_date.month == 1 and now.month == 12:
+                            parsed_date = parsed_date.replace(year=now.year + 1)
+                        elif parsed_date.month == 12 and now.month == 1:
+                            parsed_date = parsed_date.replace(year=now.year - 1)
 
                     # Format to ISO 8601 (YYYY-MM-DD)
-                    formatted_date = date_obj.strftime("%Y-%m-%d")
+                    formatted_date = parsed_date.strftime("%Y-%m-%d")
                     dates_list.append(formatted_date)
-                except ValueError:
+                except (ValueError, ParserError):
                     _LOGGER.warning("Skipping invalid date format: %s", date_text)
 
             # Store the results
