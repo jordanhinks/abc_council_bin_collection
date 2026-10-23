@@ -3,3 +3,8 @@ __pycache__
 .pytest_cache
 GEMINI.md
 .env
+.coverage
+.docs/
+test_ha_dt.py
+run_tests.py
+homeassistant/

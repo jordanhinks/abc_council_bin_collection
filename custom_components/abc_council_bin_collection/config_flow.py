@@ -46,13 +46,16 @@ class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 try:
                     url = f"https://www.armaghbanbridgecraigavon.gov.uk/resident/binday-result/?address={sanitized_address}"
                     session = async_get_clientsession(self.hass)
-                    async with asyncio.timeout(10.0):
+                    async with asyncio.timeout(30.0):
                         response = await session.get(url)
                         response.raise_for_status()
-                except Exception as ex:
+                except (aiohttp.ClientError, asyncio.TimeoutError) as ex:
                     _LOGGER.error("Cannot connect to API for validation: %s", ex)
                     errors["base"] = "cannot_connect"
                 else:
+                    await self.async_set_unique_id(sanitized_address)
+                    self._abort_if_unique_id_configured()
+
                     _LOGGER.debug("Creating entry with sanitized address: %s", sanitized_address)
                     return self.async_create_entry(
                         title="ABC Council Bin Collection",
@@ -63,6 +66,52 @@ class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema({vol.Required("user_address"): str})
         return self.async_show_form(
             step_id="user",
+            data_schema=data_schema,
+            errors=errors,
+            description_placeholders={"url": "https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/"}
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Handle a reconfiguration flow initialized by the user."""
+        
+        errors: Dict[str, str] = {}
+        entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+
+        if user_input is not None:
+            address_input = user_input.get("user_address", "")
+            sanitized_address = self._sanitize_address(address_input)
+
+            if not sanitized_address or not sanitized_address.isdigit():
+                errors["base"] = "invalid_address"
+            else:
+                try:
+                    url = f"https://www.armaghbanbridgecraigavon.gov.uk/resident/binday-result/?address={sanitized_address}"
+                    session = async_get_clientsession(self.hass)
+                    async with asyncio.timeout(30.0):
+                        response = await session.get(url)
+                        response.raise_for_status()
+                except (aiohttp.ClientError, asyncio.TimeoutError):
+                    errors["base"] = "cannot_connect"
+                else:
+                    # Prevent duplicate entries by checking if another service already uses this address
+                    for existing_entry in self._async_current_entries():
+                        if existing_entry.unique_id == sanitized_address and existing_entry.entry_id != entry.entry_id:
+                            return self.async_abort(reason="already_configured")
+
+                    return self.async_update_reload_and_abort(
+                        entry,
+                        unique_id=sanitized_address,
+                        data={**entry.data, "address": sanitized_address},
+                        reason="reconfigure_successful",
+                    )
+
+        current_address = entry.data.get("address", "") if entry else ""
+        data_schema = vol.Schema({vol.Required("user_address", default=current_address): str})
+        
+        return self.async_show_form(
+            step_id="reconfigure",
             data_schema=data_schema,
             errors=errors,
             description_placeholders={"url": "https://www.armaghbanbridgecraigavon.gov.uk/resident/when-is-my-bin-day/"}
@@ -81,7 +130,7 @@ class BinCollectionConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 qs = parse_qs(parsed_url.query)
                 extracted = qs.get("address", [None])[0]
                 return extracted.strip() if extracted else ""
-            except Exception as ex:
+            except (ValueError, TypeError, AttributeError) as ex:
                 _LOGGER.error("Error parsing URL '%s': %s", address_input, ex)
                 return ""
         return address_input

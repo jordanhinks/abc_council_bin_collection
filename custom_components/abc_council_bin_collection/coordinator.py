@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import asyncio
 import re
+import aiohttp
 
 from dateutil.parser import parse, ParserError
 from .const import EVENT_CREATION_DELAY, EVENT_CREATION_TIMEOUT
@@ -18,6 +19,7 @@ from typing import Any, Dict, List
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.exceptions import HomeAssistantError, ServiceNotFound
 
 from homeassistant.config_entries import ConfigEntry
 
@@ -129,7 +131,7 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
                     response.raise_for_status()
                     html = await response.text()
                 break
-            except Exception as err:
+            except (aiohttp.ClientError, asyncio.TimeoutError) as err:
                 _LOGGER.error("Error fetching data (attempt %d): %s", attempt + 1, err)
                 if attempt == 2:
                     raise UpdateFailed(f"Error communicating with API: {err}") from err
@@ -144,12 +146,12 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
             else:
                 _LOGGER.info("Scheduling background calendar event creation (delay %s seconds)...", EVENT_CREATION_DELAY)
                 # Schedule the background runner; store the Task so it can be cancelled later
+                coro = self._run_create_events_task(data)
                 try:
-                    self._events_task = self.hass.async_create_task(self._run_create_events_task(data))
-                except Exception:
+                    self._events_task = self.hass.async_create_task(coro)
+                except (AttributeError, RuntimeError):
                     # Fallback in environments where async_create_task returns None or is not present
-                    task = asyncio.create_task(self._run_create_events_task(data))
-                    self._events_task = task
+                    self._events_task = asyncio.create_task(coro)
 
         return data if data else {}
 
@@ -261,14 +263,11 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         except asyncio.CancelledError:
             _LOGGER.debug("Background calendar event creation task was cancelled")
             raise
-        except Exception as ex:
+        except (HomeAssistantError, ServiceNotFound, ValueError, TypeError, OSError) as ex:
             _LOGGER.error("Background calendar event creation failed: %s", ex)
         finally:
             # Clear the stored task handle so callers can see it finished
-            try:
-                self._events_task = None
-            except Exception:
-                pass
+            self._events_task = None
 
     async def _create_calendar_events(self, data: Dict[str, List[str]]) -> None:
         """
@@ -303,7 +302,7 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
                 # Check via async storage API to avoid accessing internal attributes
                 try:
                     already = self.storage.is_event_stored(date, bin_type)
-                except Exception as ex:
+                except (KeyError, TypeError, OSError) as ex:
                     _LOGGER.debug("Error checking stored event existence: %s", ex)
                     already = False
 
@@ -329,7 +328,7 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
 
                     # Timeout till creating next event
                     await asyncio.sleep(EVENT_CREATION_TIMEOUT)
-                except Exception as ex:
+                except (HomeAssistantError, ServiceNotFound, ValueError, OSError) as ex:
                     _LOGGER.error("Failed to create calendar event for %s: %s", date, ex)
 
     async def async_stop(self) -> None:
@@ -347,23 +346,17 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         """
         
         if getattr(self, "_events_task", None):
-            try:
-                self._events_task.cancel()
-            except Exception:
-                pass
+            self._events_task.cancel()
 
             try:
                 await self._events_task
             except asyncio.CancelledError:
                 _LOGGER.debug("Background events task cancelled during async_stop")
-            except Exception as ex:
+            except (HomeAssistantError, ServiceNotFound, ValueError, TypeError, OSError) as ex:
                 _LOGGER.debug("Error awaiting background events task during async_stop: %s", ex)
 
             # Ensure it's cleared
-            try:
-                self._events_task = None
-            except Exception:
-                pass
+            self._events_task = None
 
         # Call base class stop if available
         parent_stop = getattr(super(), "async_stop", None)

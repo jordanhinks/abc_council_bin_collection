@@ -73,8 +73,10 @@ class BinCollectionSensor(CoordinatorEntity, SensorEntity):
 
         # Normalize the sensor name so that it is user friendly.
         normalized_name = sensor_name if sensor_name.endswith(" Collections") else f"{sensor_name} Collection"
-        self._attr_name = normalized_name
-        self._attr_unique_id = f"{coordinator.address}_{slugify(normalized_name)}"
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{slugify(normalized_name)}"
+        
+        self._attr_has_entity_name = True
+        self._attr_translation_key = sensor_name.lower().replace(" ", "_").replace("/", "_")
         self._attr_device_class = SensorDeviceClass.DATE
 
     @property
@@ -115,7 +117,7 @@ class BinCollectionSensor(CoordinatorEntity, SensorEntity):
         """
         
         return {
-            "identifiers": {(DOMAIN, self.coordinator.address)},
+            "identifiers": {(DOMAIN, self.coordinator.config_entry.entry_id)},
             "name": DEVICE_NAME,
             "manufacturer": DEVICE_MANUFACTURER,
             "model": DEVICE_MODEL,

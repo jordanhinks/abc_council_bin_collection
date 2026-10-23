@@ -21,6 +21,8 @@ class FakeStore:
 @pytest.mark.asyncio
 async def test_load_and_save(tmp_path):
     hass = SimpleNamespace()
+    hass.data = {}
+    hass.config = SimpleNamespace(config_dir="/tmp")
     storage = BinCollectionStorage(hass)
     # Inject fake store
     fake = FakeStore()
@@ -50,6 +52,8 @@ async def test_load_and_save(tmp_path):
 @pytest.mark.asyncio
 async def test_cleanup_old_events():
     hass = SimpleNamespace()
+    hass.data = {}
+    hass.config = SimpleNamespace(config_dir="/tmp")
     storage = BinCollectionStorage(hass)
     fake = FakeStore()
     storage.store = fake
@@ -65,3 +69,46 @@ async def test_cleanup_old_events():
     loaded = await storage.load_data()
     assert recent_date in loaded
     assert old_date not in loaded
+
+
+@pytest.mark.asyncio
+async def test_storage_fallback_formats():
+    hass = SimpleNamespace()
+    hass.data = {}
+    hass.config = SimpleNamespace(config_dir="/tmp")
+    storage = BinCollectionStorage(hass)
+    fake = FakeStore()
+    storage.store = fake
+
+    future_date = (datetime.now(timezone.utc) + timedelta(days=10)).date().isoformat()
+    
+    # Test valid dict wrap
+    fake._data = {"events": {future_date: ["Recycling"]}}
+    data = await storage.load_data()
+    assert future_date in data
+    assert "Recycling" in data[future_date]
+    
+    # Test invalid format
+    fake._data = ["invalid list format"]
+    data = await storage.load_data()
+    assert data == {}
+    
+    # Test flat dict fallback
+    fake._data = {future_date: ["General"]}
+    data = await storage.load_data()
+    assert future_date in data
+    assert "General" in data[future_date]
+
+
+@pytest.mark.asyncio
+async def test_clear_data_empty():
+    hass = SimpleNamespace()
+    hass.data = {}
+    hass.config = SimpleNamespace(config_dir="/tmp")
+    storage = BinCollectionStorage(hass)
+    fake = FakeStore()
+    storage.store = fake
+
+    # clearing empty data
+    await storage.clear_data()
+    assert storage.data == {}

@@ -7,10 +7,39 @@
                     "user_address": "Address"
                 },
                 "description": "Enter complete URL or just address value from [ABC Council website]({url})."
+            },
+            "reconfigure": {
+                "data": {
+                    "user_address": "Address"
+                },
+                "description": "Update your address for the [ABC Council website]({url})."
             }
         },
         "error": {
-            "invalid_address": "Address provided is not valid. Please enter valid URL/address value."
+            "invalid_address": "Address provided is not valid. Please enter valid URL/address value.",
+            "cannot_connect": "Failed to connect to the council website. Please try again later."
+        },
+        "abort": {
+            "reconfigure_successful": "Reconfiguration was successful.",
+            "already_configured": "Address is already configured."
+        }
+    },
+    "entity": {
+        "sensor": {
+            "domestic_collections": {
+                "name": "Domestic Collection"
+            },
+            "recycling_collections": {
+                "name": "Recycling Collection"
+            },
+            "garden_food_collections": {
+                "name": "Garden/Food Collection"
+            }
+        },
+        "button": {
+            "clear_events": {
+                "name": "Clear Bin Events"
+            }
         }
     },
     "options": {

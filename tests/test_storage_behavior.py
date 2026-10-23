@@ -18,6 +18,8 @@ class FakeStore:
 @pytest.mark.asyncio
 async def test_store_event_idempotent():
     hass = SimpleNamespace()
+    hass.data = {}
+    hass.config = SimpleNamespace(config_dir="/tmp")
     storage = BinCollectionStorage(hass)
     fake = FakeStore()
     storage.store = fake
@@ -36,6 +38,8 @@ async def test_store_event_idempotent():
 @pytest.mark.asyncio
 async def test_clear_data():
     hass = SimpleNamespace()
+    hass.data = {}
+    hass.config = SimpleNamespace(config_dir="/tmp")
     storage = BinCollectionStorage(hass)
     fake = FakeStore()
     storage.store = fake

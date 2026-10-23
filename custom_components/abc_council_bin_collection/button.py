@@ -66,14 +66,15 @@ class ClearBinEventsButton(ButtonEntity):
         self._storage = storage
         self._entry_id = entry_id
         self._address = address
-        self._attr_name = "Clear Bin Events" #translation
+        self._attr_has_entity_name = True
+        self._attr_translation_key = "clear_events"
         self._attr_icon = "mdi:trash-can"
         self._attr_unique_id = f"clear_bin_events_{entry_id}"
 
     @property
     def device_info(self) -> dict:
         return {
-            "identifiers": {(DOMAIN, self._address)},
+            "identifiers": {(DOMAIN, self._entry_id)},
             "name": DEVICE_NAME,
             "manufacturer": DEVICE_MANUFACTURER,
             "model": DEVICE_MODEL,
@@ -92,5 +93,5 @@ class ClearBinEventsButton(ButtonEntity):
             _LOGGER.info("Clearing all stored bin collection events...")
             await self._storage.clear_data()
             _LOGGER.info("Bin collection events successfully cleared.")
-        except Exception as err:
+        except OSError as err:
             _LOGGER.exception("Failed to clear bin collection events: %s", err)

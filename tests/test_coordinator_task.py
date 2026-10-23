@@ -25,6 +25,8 @@ async def test_background_event_task_cancellation(monkeypatch):
     coord = BinCollectionDataUpdateCoordinator.__new__(BinCollectionDataUpdateCoordinator)
     # Provide hass with async_create_task and a stub for async_add_executor_job
     hass = SimpleNamespace()
+    hass.data = {}
+    hass.config = SimpleNamespace(config_dir="/tmp")
     hass.async_create_task = lambda coro: asyncio.create_task(coro)
     async def fake_executor(func, arg):
         return func(arg)

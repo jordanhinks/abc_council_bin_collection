@@ -29,6 +29,8 @@ async def test_calendar_event_creation(monkeypatch):
     # Minimal coordinator
     coord = BinCollectionDataUpdateCoordinator.__new__(BinCollectionDataUpdateCoordinator)
     hass = SimpleNamespace()
+    hass.data = {}
+    hass.config = SimpleNamespace(config_dir="/tmp")
     # Provide async_create_task and services
     calendar_service = FakeCalendarService()
     hass.services = SimpleNamespace(async_call=calendar_service.async_call)

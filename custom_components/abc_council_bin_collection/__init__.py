@@ -39,22 +39,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _LOGGER.debug("Setting up integration with address: %s, update_interval: %s, options: %s", address, update_interval, entry.options)
 
-    try:
-        # Initialize coordinator
-        coordinator = BinCollectionDataUpdateCoordinator(
-            hass=hass,
-            address=address,
-            update_interval=update_interval,
-            create_calendar_events=entry.options.get("create_calendar_events", False),
-            calendar_entity=entry.options.get("calendar_entity", "").strip(),
-            event_summaries=event_summaries,
-            config_entry=entry,
-        )
-        await coordinator.load_stored_events()
-        coordinator.data = await coordinator._async_update_data()
-    except Exception as err:
-        _LOGGER.exception("Error setting up coordinator: %s", err)
-        return False
+    # Initialize coordinator
+    coordinator = BinCollectionDataUpdateCoordinator(
+        hass=hass,
+        address=address,
+        update_interval=update_interval,
+        create_calendar_events=entry.options.get("create_calendar_events", False),
+        calendar_entity=entry.options.get("calendar_entity", "").strip(),
+        event_summaries=event_summaries,
+        config_entry=entry,
+    )
+    await coordinator.load_stored_events()
+    await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
@@ -72,9 +68,11 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if not coordinator:
         return
 
-    _, update_interval, event_summaries = _extract_options(entry)
+    address, update_interval, event_summaries = _extract_options(entry)
     
     # Update coordinator attributes dynamically
+    coordinator.address = address
+    coordinator.url = f"https://www.armaghbanbridgecraigavon.gov.uk/resident/binday-result/?address={address}"
     coordinator.update_interval = update_interval
     coordinator.create_calendar_events = entry.options.get("create_calendar_events", False)
     coordinator.calendar_entity = entry.options.get("calendar_entity", "").strip()
@@ -107,7 +105,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.debug("Storage found for integration %s, clearing data...", entry.entry_id)
         try:
             await coordinator.storage.clear_data()
-        except Exception as err:
+        except OSError as err:
             _LOGGER.exception("Error clearing storage for integration %s: %s", entry.entry_id, err)
     else:
         _LOGGER.info("Storage instance not found for entry %s, possibly removed too early or none exist, this is ok.", entry.entry_id)

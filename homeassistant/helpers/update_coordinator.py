@@ -15,3 +15,11 @@ class DataUpdateCoordinator:
 
     async def async_stop(self):
         return None
+
+class UpdateFailed(Exception):
+    pass
+
+class CoordinatorEntity:
+    def __init__(self, coordinator, context=None):
+        self.coordinator = coordinator
+        self.coordinator_context = context

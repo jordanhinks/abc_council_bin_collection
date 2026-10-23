@@ -18,6 +18,8 @@ class FakeResponse:
             raise Exception("HTTP Error")
 
 
+import aiohttp
+
 class FailOnceSession:
     def __init__(self, succeed_text):
         self._calls = 0
@@ -27,13 +29,13 @@ class FailOnceSession:
         self._calls += 1
         if self._calls == 1:
             # Simulate network error on first attempt
-            raise Exception("network error")
+            raise aiohttp.ClientError("network error")
         return FakeResponse(self._succeed_text)
 
 
 class AlwaysFailSession:
     async def get(self, url):
-        raise Exception("permanent failure")
+        raise aiohttp.ClientError("permanent failure")
 
 
 @pytest.mark.asyncio
