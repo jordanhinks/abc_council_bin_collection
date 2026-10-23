@@ -87,3 +87,94 @@ def test_sensor_device_info():
     assert "name" in info
     assert "manufacturer" in info
     assert "model" in info
+
+from datetime import datetime, timedelta
+import pytest
+from homeassistant.components.sensor import SensorDeviceClass
+from custom_components.abc_council_bin_collection.sensor import BinCollectionNextSensor, BinCollectionSensor
+
+def test_sensor_days_until_collection():
+    mock_coordinator = MagicMock()
+    mock_coordinator.config_entry.entry_id = "entry_id_1"
+    mock_coordinator.address = "123"
+
+    today = datetime.now().date()
+    future = today + timedelta(days=2)
+    mock_coordinator.data = {"Domestic Collections": [future.strftime("%Y-%m-%d")]}
+    sensor = BinCollectionSensor(mock_coordinator, "Domestic Collections")
+    attrs = sensor.extra_state_attributes
+    assert attrs["days_until_collection"] == 2
+
+def test_sensor_invalid_date_format():
+    mock_coordinator = MagicMock()
+    mock_coordinator.config_entry.entry_id = "entry_id_1"
+    mock_coordinator.address = "123"
+
+    mock_coordinator.data = {"Domestic Collections": ["invalid-date"]}
+    sensor = BinCollectionSensor(mock_coordinator, "Domestic Collections")
+    attrs = sensor.extra_state_attributes
+    assert "days_until_collection" not in attrs
+
+def test_next_sensor_state_and_attrs():
+    mock_coordinator = MagicMock()
+    mock_coordinator.config_entry.entry_id = "entry_id_1"
+    mock_coordinator.address = "123"
+
+    today = datetime.now().date()
+    future1 = today + timedelta(days=2)
+    future2 = today + timedelta(days=5)
+    
+    mock_coordinator.data = {
+        "Domestic Collections": [future1.strftime("%Y-%m-%d")],
+        "Recycling Collections": [future1.strftime("%Y-%m-%d")],
+        "Garden/Food Collections": [future2.strftime("%Y-%m-%d")]
+    }
+    
+    sensor = BinCollectionNextSensor(mock_coordinator)
+    
+    assert sensor.state == "Domestic, Recycling"
+    attrs = sensor.extra_state_attributes
+    assert attrs["days_until_collection"] == 2
+    assert attrs["collection_date"] == future1.strftime("%Y-%m-%d")
+    assert attrs["bin_types"] == ["Domestic", "Recycling"]
+
+def test_next_sensor_no_upcoming():
+    mock_coordinator = MagicMock()
+    mock_coordinator.config_entry.entry_id = "entry_id_1"
+    mock_coordinator.address = "123"
+
+    mock_coordinator.data = {
+        "Domestic Collections": ["No collection scheduled"]
+    }
+    sensor = BinCollectionNextSensor(mock_coordinator)
+    assert sensor.state == "No upcoming collections"
+    assert sensor.extra_state_attributes == {}
+
+def test_next_sensor_empty_data():
+    mock_coordinator = MagicMock()
+    mock_coordinator.config_entry.entry_id = "entry_id_1"
+    mock_coordinator.address = "123"
+
+    mock_coordinator.data = {}
+    sensor = BinCollectionNextSensor(mock_coordinator)
+    assert sensor.state is None
+    assert sensor.extra_state_attributes == {}
+
+def test_next_sensor_invalid_date():
+    mock_coordinator = MagicMock()
+    mock_coordinator.config_entry.entry_id = "entry_id_1"
+    mock_coordinator.address = "123"
+
+    mock_coordinator.data = {
+        "Domestic Collections": ["invalid"]
+    }
+    sensor = BinCollectionNextSensor(mock_coordinator)
+    assert sensor.state == "No upcoming collections"
+
+def test_next_sensor_device_info():
+    mock_coordinator = MagicMock()
+    mock_coordinator.config_entry.entry_id = "entry_id_1"
+    mock_coordinator.address = "123"
+
+    sensor = BinCollectionNextSensor(mock_coordinator)
+    assert sensor.device_info["identifiers"] == {("abc_council_bin_collection", "entry_id_1")}

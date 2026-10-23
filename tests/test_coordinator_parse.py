@@ -26,3 +26,18 @@ def test_parse_html_malformed_html():
     assert result["Domestic Collections"] == ["No collection scheduled"]
     assert result["Recycling Collections"] == ["No collection scheduled"]
     assert result["Garden/Food Collections"] == ["No collection scheduled"]
+
+
+def test_parse_html_uk_date_format():
+    coord = BinCollectionDataUpdateCoordinator.__new__(BinCollectionDataUpdateCoordinator)
+    # Test an ambiguous date like 04/11/2026 (Nov 4th). If parsed as US, it becomes April 11th.
+    html = '''
+    <div class="heading bg-green">Recycling</div><hr></div>
+    <div class="col-sm-12 col-md-9">
+      <h4><i class="fa fa-calendar"></i> 04/11/2026 </h4>
+    </div><div class="col-sm-12 col-md-3">
+    '''
+    result = BinCollectionDataUpdateCoordinator._parse_html(coord, html)
+    assert "Recycling Collections" in result
+    # We expect 2026-11-04 (Nov 4th). If the bug existed, it would return 2026-04-11.
+    assert result["Recycling Collections"][0] == "2026-11-04"

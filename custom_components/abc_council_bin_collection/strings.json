@@ -47,6 +47,9 @@
             },
             "garden_food_collections": {
                 "name": "Garden/Food Collection"
+            },
+            "next_collection": {
+                "name": "Next Collection"
             }
         },
         "button": {
@@ -68,6 +71,12 @@
                 },
                 "description": "Configure additional options relating to data fetch interval and creating calendar events."
             }
+        }
+    },
+    "issues": {
+        "parse_failure": {
+            "title": "Bin Schedule Parsing Failed",
+            "description": "The ABC Council Bin Collection integration was unable to find any valid collection dates on the council website for several consecutive updates.\n\nThis usually means the council has changed their website layout or has not yet published the upcoming schedule.\n\nPlease check the [GitHub Issue Tracker]({github_url}) to see if an update is available or to report the problem."
         }
     }
 }

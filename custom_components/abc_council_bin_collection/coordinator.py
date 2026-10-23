@@ -12,13 +12,14 @@ import re
 import aiohttp
 
 from dateutil.parser import parse, ParserError
-from .const import EVENT_CREATION_DELAY, EVENT_CREATION_TIMEOUT
+from .const import DOMAIN, EVENT_CREATION_DELAY, EVENT_CREATION_TIMEOUT
 from .storage import BinCollectionStorage
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.issue_registry import async_create_issue, async_delete_issue, IssueSeverity
 from homeassistant.exceptions import HomeAssistantError, ServiceNotFound
 
 from homeassistant.config_entries import ConfigEntry
@@ -92,6 +93,9 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
         self.calendar_entity = calendar_entity
         self.event_summaries = event_summaries
 
+        self._base_update_interval = update_interval
+        self._consecutive_parse_failures = 0
+
         # Initialize persistent storage
         self.storage: BinCollectionStorage = BinCollectionStorage(hass)
 
@@ -137,6 +141,63 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
                     raise UpdateFailed(f"Error communicating with API: {err}") from err
 
         data = await self.hass.async_add_executor_job(self._parse_html, html)
+
+        # Check if the parsed data actually contains any scheduled dates
+        has_dates = any(
+            any(date_str != "No collection scheduled" for date_str in dates)
+            for dates in data.values()
+        )
+
+        if not has_dates:
+            self._consecutive_parse_failures = getattr(self, "_consecutive_parse_failures", 0) + 1
+            if self._consecutive_parse_failures >= 3:
+                async_create_issue(
+                    self.hass,
+                    DOMAIN,
+                    f"parse_failure_{self.address}",
+                    is_fixable=False,
+                    severity=IssueSeverity.ERROR,
+                    translation_key="parse_failure",
+                    translation_placeholders={
+                        "github_url": "https://github.com/jordanhinks/abc_council_bin_collection/issues"
+                    },
+                )
+        else:
+            if getattr(self, "_consecutive_parse_failures", 0) > 0:
+                self._consecutive_parse_failures = 0
+                async_delete_issue(self.hass, DOMAIN, f"parse_failure_{self.address}")
+
+            # Smart Interval Calculation
+            today = datetime.now().date()
+            future_dates = []
+            for dates in data.values():
+                for date_str in dates:
+                    if date_str != "No collection scheduled":
+                        try:
+                            d = datetime.strptime(date_str, "%Y-%m-%d").date()
+                            if d >= today:
+                                future_dates.append(d)
+                        except ValueError:
+                            pass
+            
+            if future_dates:
+                next_collection = min(future_dates)
+                # Poll the day after the next collection to get the new dates
+                days_until_poll = (next_collection - today).days + 1
+                
+                # Minimum interval of 12 hours to prevent tight loops, capped at the user's base interval
+                smart_interval = max(timedelta(hours=12), timedelta(days=days_until_poll))
+                base_interval = getattr(self, "_base_update_interval", self.update_interval)
+                new_interval = min(smart_interval, base_interval)
+                
+                if self.update_interval != new_interval:
+                    _LOGGER.debug("Smart update interval adjusting to %s (next collection: %s)", new_interval, next_collection)
+                    self.update_interval = new_interval
+            else:
+                base_interval = getattr(self, "_base_update_interval", self.update_interval)
+                if self.update_interval != base_interval:
+                    _LOGGER.debug("Smart update interval reverting to base %s (no future collections found)", base_interval)
+                    self.update_interval = base_interval
 
         # Create calendar events if enabled — schedule as a background task so
         # coordinator refreshes are not blocked and cancellation is manageable.
@@ -193,7 +254,8 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
                 try:
                     now = datetime.now()
                     # Parse using fuzzy matching. Uses current datetime to fill missing fields (like year)
-                    parsed_date = parse(date_text, fuzzy=True, default=now)
+                    # UK dates use DD/MM/YYYY, so we must set dayfirst=True to avoid ambiguous dates (e.g. 04/11) being parsed as US format.
+                    parsed_date = parse(date_text, fuzzy=True, default=now, dayfirst=True)
                     
                     # Handle year wrapping logic if the year was omitted and defaulted to the current year
                     if parsed_date.year == now.year:
