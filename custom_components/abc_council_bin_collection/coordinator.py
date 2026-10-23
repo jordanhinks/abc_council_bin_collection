@@ -253,10 +253,29 @@ class BinCollectionDataUpdateCoordinator(DataUpdateCoordinator):
                 
                 try:
                     now = datetime.now()
-                    # Parse using fuzzy matching. Uses current datetime to fill missing fields (like year)
-                    # UK dates use DD/MM/YYYY, so we must set dayfirst=True to avoid ambiguous dates (e.g. 04/11) being parsed as US format.
-                    parsed_date = parse(date_text, fuzzy=True, default=now, dayfirst=True)
-                    
+                    parsed_date = None
+
+                    # 1. Try explicit ISO format (YYYY-MM-DD) to prevent dateutil dayfirst=True bug
+                    iso_match = re.search(r'\b(\d{4})-(\d{1,2})-(\d{1,2})\b', date_text)
+                    if iso_match:
+                        parsed_date = datetime(int(iso_match.group(1)), int(iso_match.group(2)), int(iso_match.group(3)))
+
+                    # 2. Try explicit UK format (DD/MM/YYYY or DD-MM-YYYY)
+                    if not parsed_date:
+                        uk_match = re.search(r'\b(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b', date_text)
+                        if uk_match:
+                            parsed_date = datetime(int(uk_match.group(3)), int(uk_match.group(2)), int(uk_match.group(1)))
+
+                    # 3. Try explicit short UK format (DD/MM or DD-MM)
+                    if not parsed_date:
+                        uk_short_match = re.search(r'\b(\d{1,2})[/-](\d{1,2})\b', date_text)
+                        if uk_short_match:
+                            parsed_date = datetime(now.year, int(uk_short_match.group(2)), int(uk_short_match.group(1)))
+
+                    # 4. Fallback to dateutil for word-based dates (e.g., "4th November")
+                    if not parsed_date:
+                        parsed_date = parse(date_text, fuzzy=True, default=now, dayfirst=True)
+
                     # Handle year wrapping logic if the year was omitted and defaulted to the current year
                     if parsed_date.year == now.year:
                         if parsed_date.month == 1 and now.month == 12:
