@@ -1,0 +1,41 @@
+blueprint:
+  name: ABC Council Bin Reminder
+  description: Sends a notification to your device the evening before your bins need to go out.
+  domain: automation
+  input:
+    notify_device:
+      name: Device to notify
+      description: The mobile app device to send the push notification to.
+      selector:
+        device:
+          integration: mobile_app
+    notify_time:
+      name: Notification Time
+      description: Time to send the reminder.
+      default: "20:00:00"
+      selector:
+        time:
+    next_collection_sensor:
+      name: Next Collection Sensor
+      description: Your ABC Council Next Collection sensor.
+      selector:
+        entity:
+          integration: abc_council_bin_collection
+          domain: sensor
+
+trigger:
+  - platform: time
+    at: !input notify_time
+
+condition:
+  - condition: numeric_state
+    entity_id: !input next_collection_sensor
+    attribute: days_until_collection
+    below: 2
+
+action:
+  - domain: mobile_app
+    type: notify
+    device_id: !input notify_device
+    message: "Reminder: Put out the {{ states(next_collection_sensor) }} bin(s) for tomorrow's collection."
+    title: "Bin Collection Tomorrow"
